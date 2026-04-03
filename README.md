@@ -186,3 +186,28 @@ python3 -m http.server 5500
 Then open: `http://127.0.0.1:5500`
 
 The frontend now calls the backend endpoint `POST /api/analyze` directly and no longer uses preset/mock calculations in the browser.
+
+### Supabase Storage Layer (Optional)
+
+The backend now stores day analysis history in Supabase through Prisma ORM and reads the last 3 days automatically.
+
+1. Create the table using [backend/supabase_schema.sql](backend/supabase_schema.sql).
+2. Install Prisma dependencies and generate client:
+
+```bash
+npm install
+cd backend
+npx prisma generate
+```
+
+3. Set environment variables in [backend/.env](backend/.env):
+
+```bash
+DATABASE_URL="postgresql://..."  # Supabase pooled connection string
+DIRECT_URL="postgresql://..."    # Supabase direct connection string (for migrations)
+```
+
+When enabled:
+
+- `POST /api/analyze` fetches `previous_days` via Prisma from Supabase if request does not include it.
+- The analyzed day is written back to Supabase for future state calculations.

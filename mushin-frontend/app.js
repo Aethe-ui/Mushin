@@ -15,6 +15,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const stateBadgeEl = document.getElementById('state-badge');
     const stateExplanationEl = document.getElementById('state-explanation');
 
+    // Hackathon prototype: starts with no historical streak data.
+    const previousDays = [];
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -37,7 +40,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify({
+                    ...data,
+                    previous_days: previousDays
+                })
             });
 
             if (!response.ok) {
@@ -47,13 +53,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const result = await response.json();
-            displayResults(result);
+            displayResults({
+                ...data,
+                ...result
+            });
         } catch (error) {
-            console.error("Failed to process data:", error);
-            alert(`Error connecting to the backend: ${error.message}`);
+            console.error('Failed to process data:', error);
+            alert(`Error connecting to backend: ${error.message}`);
         } finally {
             // Restore UI
-            btnText.textContent = 'Analyze State';
+            btnText.textContent = 'Analyze Day';
             spinner.classList.add('hidden');
             submitBtn.disabled = false;
         }
@@ -65,18 +74,20 @@ document.addEventListener('DOMContentLoaded', () => {
         resultsContainer.classList.remove('hidden');
 
         // Populate metrics
-        perfScoreEl.textContent = data.performance_score;
-        xpGainedEl.textContent = `+${data.xp_gained}`;
+        perfScoreEl.textContent = data.score;
+        xpGainedEl.textContent = data.xp;
         
         // Update State
         stateBadgeEl.textContent = data.state;
         stateExplanationEl.textContent = data.explanation;
 
         // Reset state classes
-        outputSection.classList.remove('state-normal', 'state-strain', 'state-burnout');
+        outputSection.classList.remove('state-normal', 'state-strain', 'state-burnout', 'state-optimal');
         
         // Apply new state class
-        if (data.state === 'NORMAL') {
+        if (data.state === 'OPTIMAL') {
+            outputSection.classList.add('state-optimal');
+        } else if (data.state === 'NORMAL') {
             outputSection.classList.add('state-normal');
         } else if (data.state === 'STRAIN') {
             outputSection.classList.add('state-strain');
