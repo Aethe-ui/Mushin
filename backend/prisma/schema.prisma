@@ -24,6 +24,7 @@ model DailyMetric {
   explanation    String
   createdAt      DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
 
-  @@index([userId, entryDate], map: "daily_metrics_user_date_idx")
+  @@unique([userId, entryDate], map: "daily_metrics_user_date_key")
+  @@index([userId, entryDate(sort: Desc)], map: "daily_metrics_user_date_idx")
   @@map("daily_metrics")
 }

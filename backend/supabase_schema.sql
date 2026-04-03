@@ -13,5 +13,8 @@ create table if not exists public.daily_metrics (
     created_at timestamptz not null default now()
 );
 
+create unique index if not exists daily_metrics_user_date_key
+    on public.daily_metrics (user_id, entry_date);
+
 create index if not exists daily_metrics_user_date_idx
     on public.daily_metrics (user_id, entry_date desc);

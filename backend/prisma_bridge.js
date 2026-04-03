@@ -44,12 +44,11 @@ async function fetchLastThreeDays(userId) {
 }
 
 async function storeDay(payload) {
-    const userId = String(payload.user_id || 'demo-user').trim() || 'demo-user';
+    const userId = String(payload.user_id || '').trim();
+    if (!userId) {
+        throw new Error('user_id is required');
+    }
     const entryDate = normalizeDateOnly(payload.entry_date);
-
-    const existing = await prisma.dailyMetric.findFirst({
-        where: { userId, entryDate }
-    });
 
     const data = {
         userId,
@@ -63,14 +62,16 @@ async function storeDay(payload) {
         explanation: String(payload.explanation || '')
     };
 
-    if (existing) {
-        await prisma.dailyMetric.update({
-            where: { id: existing.id },
-            data
-        });
-    } else {
-        await prisma.dailyMetric.create({ data });
-    }
+    await prisma.dailyMetric.upsert({
+        where: {
+            userId_entryDate: {
+                userId,
+                entryDate
+            }
+        },
+        update: data,
+        create: data
+    });
 
     return { ok: true };
 }
@@ -80,7 +81,10 @@ async function main() {
     const action = input.action;
 
     if (action === 'fetch_last_three_days') {
-        const userId = String(input.user_id || 'demo-user').trim() || 'demo-user';
+        const userId = String(input.user_id || '').trim();
+        if (!userId) {
+            throw new Error('user_id is required');
+        }
         const history = await fetchLastThreeDays(userId);
         console.log(JSON.stringify(history));
         return;

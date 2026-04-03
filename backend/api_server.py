@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Dict
 
@@ -10,10 +11,19 @@ from prisma_storage import PrismaStorage
 HOST = "127.0.0.1"
 PORT = 8000
 STORAGE = PrismaStorage()
+MAX_REQUEST_BYTES = int(os.getenv("MAX_REQUEST_BYTES", "1048576"))
+ALLOWED_ORIGINS = {
+	origin.strip()
+	for origin in os.getenv("ALLOWED_ORIGINS", "http://127.0.0.1:5500,http://localhost:5500").split(",")
+	if origin.strip()
+}
 
 def analyze_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
-	user_id = str(payload.get("user_id", "demo-user")).strip() or "demo-user"
+	user_id = str(payload.get("user_id", "")).strip()
+	if not user_id:
+		raise ValueError("user_id is required.")
 	input_payload = dict(payload)
+	input_payload["user_id"] = user_id
 
 	if not isinstance(input_payload.get("previous_days"), list) or not input_payload.get("previous_days"):
 		try:
@@ -35,7 +45,7 @@ def analyze_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
 			explanation=str(result["explanation"]),
 		)
 	except Exception:
-		pass
+		result["storage_warning"] = "Storage write failed."
 
 	result["history_source"] = "prisma" if STORAGE.enabled else "request"
 	return result
@@ -45,9 +55,14 @@ class MushinAPIHandler(BaseHTTPRequestHandler):
 	def _set_headers(self, status_code: int = 200) -> None:
 		self.send_response(status_code)
 		self.send_header("Content-Type", "application/json")
-		self.send_header("Access-Control-Allow-Origin", "*")
+		origin = self.headers.get("Origin")
+		if origin and origin in ALLOWED_ORIGINS:
+			self.send_header("Access-Control-Allow-Origin", origin)
+		elif ALLOWED_ORIGINS:
+			self.send_header("Access-Control-Allow-Origin", sorted(ALLOWED_ORIGINS)[0])
 		self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		self.send_header("Access-Control-Allow-Headers", "Content-Type")
+		self.send_header("Vary", "Origin")
 		self.end_headers()
 
 	def do_OPTIONS(self) -> None:  # noqa: N802
@@ -70,17 +85,25 @@ class MushinAPIHandler(BaseHTTPRequestHandler):
 
 		try:
 			content_length = int(self.headers.get("Content-Length", "0"))
+			if content_length < 0:
+				raise ValueError("Invalid Content-Length.")
+			if content_length > MAX_REQUEST_BYTES:
+				self._set_headers(413)
+				self.wfile.write(json.dumps({"error": "Payload too large"}).encode("utf-8"))
+				return
 			raw = self.rfile.read(content_length)
 			payload = json.loads(raw.decode("utf-8")) if raw else {}
+			if not isinstance(payload, dict):
+				raise ValueError("Request body must be a JSON object.")
 			result = analyze_payload(payload)
 			self._set_headers(200)
 			self.wfile.write(json.dumps(result).encode("utf-8"))
 		except (ValueError, TypeError) as exc:
 			self._set_headers(400)
 			self.wfile.write(json.dumps({"error": str(exc)}).encode("utf-8"))
-		except Exception as exc:  # noqa: BLE001
+		except Exception:  # noqa: BLE001
 			self._set_headers(500)
-			self.wfile.write(json.dumps({"error": f"Internal server error: {exc}"}).encode("utf-8"))
+			self.wfile.write(json.dumps({"error": "Internal server error"}).encode("utf-8"))
 
 
 def run_server(host: str = HOST, port: int = PORT) -> None:
