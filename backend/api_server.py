@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 import logging
 import os
+from ipaddress import ip_address
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Dict
+from urllib.parse import urlsplit
 
 from mushin_calculator import analyze_day
 from prisma_storage import PrismaStorage
@@ -23,7 +25,49 @@ ALLOWED_ORIGINS = {
 	if origin
 }
 ALLOWED_ORIGINS_BY_LOWER = {origin.lower(): origin for origin in ALLOWED_ORIGINS}
+DEV_ALLOWED_PORTS_ENV = os.getenv("DEV_ALLOWED_ORIGIN_PORTS", "3000,5500")
+DEV_ALLOWED_PORTS = {
+	port
+	for port in (item.strip() for item in DEV_ALLOWED_PORTS_ENV.split(","))
+	if port.isdigit()
+}
 LOGGER = logging.getLogger(__name__)
+
+
+def _is_allowed_private_dev_origin(origin: str) -> bool:
+	try:
+		parsed = urlsplit(origin)
+	except ValueError:
+		return False
+
+	if parsed.scheme not in {"http", "https"}:
+		return False
+	if parsed.username or parsed.password or parsed.path or parsed.query or parsed.fragment:
+		return False
+	if not parsed.hostname:
+		return False
+	if parsed.port is None or str(parsed.port) not in DEV_ALLOWED_PORTS:
+		return False
+
+	try:
+		host_ip = ip_address(parsed.hostname)
+	except ValueError:
+		return False
+
+	return host_ip.is_private or host_ip.is_loopback
+
+
+def _resolve_allowed_origin(origin: str) -> str | None:
+	normalized = origin.strip()
+	if not normalized:
+		return None
+
+	configured = ALLOWED_ORIGINS_BY_LOWER.get(normalized.lower())
+	if configured:
+		return configured
+	if _is_allowed_private_dev_origin(normalized):
+		return normalized
+	return None
 
 def analyze_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
 	user_id = str(payload.get("user_id", "")).strip()
@@ -67,7 +111,7 @@ class MushinAPIHandler(BaseHTTPRequestHandler):
 		self.send_response(status_code)
 		self.send_header("Content-Type", "application/json")
 		origin = self.headers.get("Origin", "").strip()
-		allowed_origin = ALLOWED_ORIGINS_BY_LOWER.get(origin.lower())
+		allowed_origin = _resolve_allowed_origin(origin)
 		if allowed_origin:
 			self.send_header("Access-Control-Allow-Origin", allowed_origin)
 		self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
