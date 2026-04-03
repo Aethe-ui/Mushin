@@ -27,7 +27,7 @@ ALLOWED_ORIGINS = {
 ALLOWED_ORIGINS_BY_LOWER = {origin.lower(): origin for origin in ALLOWED_ORIGINS}
 DEV_ALLOWED_ORIGIN_PORTS_ENV = os.getenv("DEV_ALLOWED_ORIGIN_PORTS", "3000,5500")
 
-def _parse_allowed_ports(raw_ports: str) -> set[str]:
+def _parse_dev_allowed_ports(raw_ports: str) -> set[str]:
 	allowed_ports: set[str] = set()
 	for item in raw_ports.split(","):
 		port = item.strip()
@@ -39,7 +39,7 @@ def _parse_allowed_ports(raw_ports: str) -> set[str]:
 	return allowed_ports
 
 
-DEV_ALLOWED_PORTS = _parse_allowed_ports(DEV_ALLOWED_ORIGIN_PORTS_ENV)
+DEV_ALLOWED_PORTS = _parse_dev_allowed_ports(DEV_ALLOWED_ORIGIN_PORTS_ENV)
 LOGGER = logging.getLogger(__name__)
 
 
