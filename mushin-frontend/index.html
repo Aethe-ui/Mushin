@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MUSHIN Interface</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>MUSHIN System</h1>
+            <p>Data Input & Analysis</p>
+        </header>
+
+        <main>
+            <section class="card input-section">
+                <h2>Input Metrics</h2>
+                <form id="mushin-form">
+                    <div class="form-group">
+                        <label for="focus_hours">Focus Hours</label>
+                        <input type="number" id="focus_hours" name="focus_hours" step="0.1" min="0" required placeholder="e.g. 4.5">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="workout_minutes">Workout Minutes</label>
+                        <input type="number" id="workout_minutes" name="workout_minutes" min="0" required placeholder="e.g. 45">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="rest_hours">Rest Hours</label>
+                        <input type="number" id="rest_hours" name="rest_hours" step="0.1" min="0" required placeholder="e.g. 7.5">
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submit-btn">
+                        <span>Analyze State</span>
+                        <div class="spinner hidden" id="spinner"></div>
+                    </button>
+                </form>
+            </section>
+
+            <section class="card output-section" id="output-section">
+                <h2>System Output</h2>
+                
+                <div class="results hidden" id="results-container">
+                    <div class="metrics-grid">
+                        <div class="metric-box">
+                            <span class="metric-label">Performance Score</span>
+                            <span class="metric-value" id="perf-score">--</span>
+                        </div>
+                        <div class="metric-box">
+                            <span class="metric-label">XP Gained</span>
+                            <span class="metric-value" id="xp-gained">--</span>
+                        </div>
+                    </div>
+
+                    <div class="state-container" id="state-container">
+                        <div class="state-header">
+                            <h3>Current State</h3>
+                            <span class="state-badge" id="state-badge">UNKNOWN</span>
+                        </div>
+                        <div class="state-explanation" id="state-explanation">
+                            Run analysis to see current state explanation.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="empty-state" id="empty-state">
+                    <p>Enter your metrics and submit to view system outputs.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
