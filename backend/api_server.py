@@ -26,11 +26,20 @@ ALLOWED_ORIGINS = {
 }
 ALLOWED_ORIGINS_BY_LOWER = {origin.lower(): origin for origin in ALLOWED_ORIGINS}
 DEV_ALLOWED_PORTS_ENV = os.getenv("DEV_ALLOWED_ORIGIN_PORTS", "3000,5500")
-DEV_ALLOWED_PORTS = {
-	port
-	for port in (item.strip() for item in DEV_ALLOWED_PORTS_ENV.split(","))
-	if port.isdigit()
-}
+
+def _parse_allowed_ports(raw_ports: str) -> set[str]:
+	allowed_ports: set[str] = set()
+	for item in raw_ports.split(","):
+		port = item.strip()
+		if not port.isdigit():
+			continue
+		port_number = int(port)
+		if 1 <= port_number <= 65535:
+			allowed_ports.add(str(port_number))
+	return allowed_ports
+
+
+DEV_ALLOWED_PORTS = _parse_allowed_ports(DEV_ALLOWED_PORTS_ENV)
 LOGGER = logging.getLogger(__name__)
 
 
@@ -46,7 +55,15 @@ def _is_allowed_private_dev_origin(origin: str) -> bool:
 		return False
 	if not parsed.hostname:
 		return False
-	if parsed.port is None or str(parsed.port) not in DEV_ALLOWED_PORTS:
+	effective_port = parsed.port
+	if effective_port is None:
+		if parsed.scheme == "http":
+			effective_port = 80
+		elif parsed.scheme == "https":
+			effective_port = 443
+		else:
+			return False
+	if str(effective_port) not in DEV_ALLOWED_PORTS:
 		return False
 
 	try:
