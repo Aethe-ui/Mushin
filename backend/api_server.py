@@ -13,13 +13,16 @@ HOST = "127.0.0.1"
 PORT = 8000
 STORAGE = PrismaStorage()
 MAX_REQUEST_BYTES = int(os.getenv("MAX_REQUEST_BYTES", "1048576"))
-ALLOWED_ORIGINS_ENV = os.getenv("ALLOWED_ORIGINS", "http://127.0.0.1:5500,http://localhost:5500")
-DEFAULT_CORS_ORIGIN = os.getenv("DEFAULT_CORS_ORIGIN", "http://127.0.0.1:5500").strip()
+ALLOWED_ORIGINS_ENV = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://127.0.0.1:5500,http://localhost:5500,http://127.0.0.1:3000,http://localhost:3000",
+)
 ALLOWED_ORIGINS = {
 	origin
 	for origin in (item.strip() for item in ALLOWED_ORIGINS_ENV.split(","))
 	if origin
 }
+ALLOWED_ORIGINS_BY_LOWER = {origin.lower(): origin for origin in ALLOWED_ORIGINS}
 LOGGER = logging.getLogger(__name__)
 
 def analyze_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -64,8 +67,9 @@ class MushinAPIHandler(BaseHTTPRequestHandler):
 		self.send_response(status_code)
 		self.send_header("Content-Type", "application/json")
 		origin = self.headers.get("Origin", "").strip()
-		if origin in ALLOWED_ORIGINS and DEFAULT_CORS_ORIGIN in ALLOWED_ORIGINS:
-			self.send_header("Access-Control-Allow-Origin", DEFAULT_CORS_ORIGIN)
+		allowed_origin = ALLOWED_ORIGINS_BY_LOWER.get(origin.lower())
+		if allowed_origin:
+			self.send_header("Access-Control-Allow-Origin", allowed_origin)
 		self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		self.send_header("Access-Control-Allow-Headers", "Content-Type")
 		self.send_header("Vary", "Origin")
