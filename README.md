@@ -170,6 +170,15 @@ python3 api_server.py
 
 The backend will run at `http://127.0.0.1:8000`.
 
+If your frontend runs on another local/private IP (for example `http://10.x.x.x:3000`), CORS is allowed by default for private/loopback IP hosts on ports `3000` and `5500`.
+You can override this with:
+
+```bash
+DEV_ALLOWED_ORIGIN_PORTS=3000,5500 python3 api_server.py
+```
+
+For explicit allow-list entries, set `ALLOWED_ORIGINS` (comma-separated full origins).
+
 ### Run Frontend
 
 In a new terminal from the project root:
