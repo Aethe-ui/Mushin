@@ -13,6 +13,7 @@ class PrismaStorage:
         self.bridge_script = os.path.join(self.backend_dir, "prisma_bridge.js")
         self._load_local_env_file()
         self.database_url = os.getenv("DATABASE_URL", "").strip()
+        self.bridge_timeout_seconds = int(os.getenv("PRISMA_BRIDGE_TIMEOUT_SECONDS", "15"))
 
     def _load_local_env_file(self) -> None:
         env_path = os.path.join(self.backend_dir, ".env")
@@ -45,6 +46,7 @@ class PrismaStorage:
             capture_output=True,
             text=True,
             cwd=self.backend_dir,
+            timeout=self.bridge_timeout_seconds,
         )
         stdout = process.stdout.strip()
         if not stdout:

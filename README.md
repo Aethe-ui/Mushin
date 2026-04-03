@@ -66,23 +66,19 @@ Mushin provides one unified environment where users can:
 ## Architecture
 
 ```text
-[ Client (Next.js) ]
+[ Static Frontend (HTML/CSS/JS) ]
           ↓
-[ Supabase Backend ]
-   ├── Auth
-   ├── PostgreSQL
-   ├── Realtime
+[ Python API (backend/api_server.py) ]
           ↓
-[ AI Layer (OpenAI API) ]
+[ Prisma Bridge + Supabase PostgreSQL (optional) ]
 ```
 
 ## Tech Stack
 
-- Frontend: Next.js 14, React, Tailwind CSS
-- State: Zustand
-- Backend: Supabase (Auth, PostgreSQL, Realtime)
-- AI: OpenAI API
-- Deployment: Vercel
+- Frontend: Static HTML/CSS/JavaScript (`mushin-frontend/`)
+- Backend API: Python (`backend/api_server.py`)
+- Storage: Supabase PostgreSQL via Prisma bridge (`backend/prisma_bridge.js`) when configured
+- Runtime: Node.js + Python 3
 
 ## Suggested Project Structure
 

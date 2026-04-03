@@ -123,8 +123,8 @@ class FocusSession:
 	def _validate_avg_focus_rating(value: float) -> float:
 		if not isinstance(value, (int, float)):
 			raise ValueError("avg_focus_rating must be a number.")
-		if value < 1 or value > 5:
-			raise ValueError("avg_focus_rating must be between 1 and 5.")
+		if value < 0 or value > 5:
+			raise ValueError("avg_focus_rating must be between 0 and 5.")
 		return float(value)
 
 	def set_sessions_today(self, value: int) -> None:
