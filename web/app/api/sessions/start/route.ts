@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionUser } from "@/lib/auth";
+import { parseUuidOrNull } from "@/lib/utils";
 
 export async function POST(request: Request) {
   const user = await getSessionUser();
@@ -19,20 +20,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const planned = body.planned_duration;
-  if (typeof planned !== "number" || planned <= 0) {
+  const planned = Number(body.planned_duration);
+  if (!Number.isFinite(planned) || planned <= 0) {
     return NextResponse.json(
       { error: "planned_duration must be a positive number" },
       { status: 400 }
     );
   }
 
+  const workspaceId = parseUuidOrNull(body.workspace_id);
+
   const supabase = createClient();
   const { data, error } = await supabase
     .from("sessions")
     .insert({
       user_id: user.id,
-      workspace_id: body.workspace_id ?? null,
+      workspace_id: workspaceId,
       planned_duration: planned,
       goal: body.goal ?? null,
       status: "active",

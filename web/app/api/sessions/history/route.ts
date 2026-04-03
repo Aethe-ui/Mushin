@@ -9,11 +9,12 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const limit = Math.min(
-    50,
-    Math.max(1, parseInt(searchParams.get("limit") ?? "20", 10))
-  );
-  const offset = Math.max(0, parseInt(searchParams.get("offset") ?? "0", 10));
+  const rawLimit = parseInt(searchParams.get("limit") ?? "20", 10);
+  const rawOffset = parseInt(searchParams.get("offset") ?? "0", 10);
+  const limit = Number.isFinite(rawLimit)
+    ? Math.min(50, Math.max(1, rawLimit))
+    : 20;
+  const offset = Number.isFinite(rawOffset) ? Math.max(0, rawOffset) : 0;
 
   const supabase = createClient();
   const { count, error: countErr } = await supabase

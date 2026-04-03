@@ -43,14 +43,23 @@ export function usePresence(
   const heartbeat = useCallback(async () => {
     if (!workspaceId || !userId) return;
     const supabase = createClient();
-    await supabase.from("presence").upsert(
-      {
+    const last_seen = new Date().toISOString();
+    const { data: updated, error: updateErr } = await supabase
+      .from("presence")
+      .update({ last_seen })
+      .eq("workspace_id", workspaceId)
+      .eq("user_id", userId)
+      .select("id");
+
+    if (updateErr) return;
+
+    if (!updated?.length) {
+      await supabase.from("presence").insert({
         workspace_id: workspaceId,
         user_id: userId,
-        last_seen: new Date().toISOString(),
-      },
-      { onConflict: "workspace_id,user_id" }
-    );
+        last_seen,
+      });
+    }
   }, [workspaceId, userId]);
 
   useEffect(() => {
