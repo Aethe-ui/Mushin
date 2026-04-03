@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const API_BASE_URL = 'http://127.0.0.1:8000';
     const form = document.getElementById('mushin-form');
     const submitBtn = document.getElementById('submit-btn');
     const spinner = document.getElementById('spinner');
@@ -31,18 +32,25 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.disabled = true;
 
         try {
-            // SIMULATING API CALL TO BACKEND/CORE ENGINE
-            // In production, this would be: 
-            // const response = await fetch('/api/analyze', { method: 'POST', body: JSON.stringify(data) });
-            // const result = await response.json();
-            
-            const result = await simulateBackendProcessing(data);
-            
+            const response = await fetch(`${API_BASE_URL}/api/analyze`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (!response.ok) {
+                const errorPayload = await response.json().catch(() => ({}));
+                const message = errorPayload.error || `Request failed with status ${response.status}`;
+                throw new Error(message);
+            }
+
+            const result = await response.json();
             displayResults(result);
-            
         } catch (error) {
             console.error("Failed to process data:", error);
-            alert("Error connecting to the Core Engine.");
+            alert(`Error connecting to the backend: ${error.message}`);
         } finally {
             // Restore UI
             btnText.textContent = 'Analyze State';
@@ -77,45 +85,4 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Backend Simulation Logic 
-    function simulateBackendProcessing(data) {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                const { focus_hours, workout_minutes, rest_hours } = data;
-                
-                let state = 'NORMAL';
-                let performance_score = 85;
-                let xp_gained = 120;
-                let explanation = '';
-
-                // Simple logic for demonstration
-                const load = focus_hours + (workout_minutes / 60);
-                const recovery = rest_hours;
-
-                if (recovery < 5 && load > 8) {
-                    state = 'BURNOUT';
-                    performance_score = 42;
-                    xp_gained = 15;
-                    explanation = 'Critical deficit in recovery detected. High cognitive and physical load without adequate sleep has compromised system efficiency. Immediate rest mandated.';
-                } else if (recovery < 7 && load > 6) {
-                    state = 'STRAIN';
-                    performance_score = 68;
-                    xp_gained = 50;
-                    explanation = 'Elevated load parameters with sub-optimal recovery. Capacity is degrading. Consider increasing restorative protocols (sleep, light movement) to stabilize performance.';
-                } else {
-                    state = 'NORMAL';
-                    performance_score = Math.min(100, Math.floor(70 + (load * 3) + (recovery * 2)));
-                    xp_gained = Math.floor(100 + (load * 20));
-                    explanation = 'Parameters nominal. Balance between capacity and recovery is optimal. Safe to maintain current output or progressively overload.';
-                }
-
-                resolve({
-                    performance_score,
-                    xp_gained,
-                    state,
-                    explanation
-                });
-            }, 800); // 800ms delay to simulate network request
-        });
-    }
 });

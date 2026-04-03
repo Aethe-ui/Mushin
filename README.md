@@ -155,3 +155,34 @@ Mushin aims to become the operating system for deep work in the AI era.
 **One-line summary:**
 
 > Enter focus. AI works quietly in the background. Team stays in sync. Nothing breaks your flow.
+
+## Local Demo (Current Workspace)
+
+This repository currently contains:
+
+- a Python backend API in `backend/api_server.py`
+- a static frontend in `mushin-frontend/`
+
+### Run Backend
+
+From the project root:
+
+```bash
+cd backend
+python3 api_server.py
+```
+
+The backend will run at `http://127.0.0.1:8000`.
+
+### Run Frontend
+
+In a new terminal from the project root:
+
+```bash
+cd mushin-frontend
+python3 -m http.server 5500
+```
+
+Then open: `http://127.0.0.1:5500`
+
+The frontend now calls the backend endpoint `POST /api/analyze` directly and no longer uses preset/mock calculations in the browser.
