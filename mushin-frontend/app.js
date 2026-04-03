@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify({
                     ...data,
+                    user_id: 'local-user',
                     previous_days: previousDays
                 })
             });
