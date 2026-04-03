@@ -105,13 +105,31 @@ document.addEventListener('DOMContentLoaded', () => {
             if (existingId && existingId.trim()) {
                 return existingId.trim();
             }
-            const generatedId = `local-${crypto.randomUUID()}`;
+            const generatedId = `local-${generateClientId()}`;
             localStorage.setItem(USER_ID_STORAGE_KEY, generatedId);
             return generatedId;
         } catch (error) {
             console.warn('Local storage unavailable for user_id persistence:', error);
             return `local-${Date.now()}`;
         }
+    }
+
+    function generateClientId() {
+        const cryptoApi = window.crypto || window.msCrypto;
+        if (cryptoApi && typeof cryptoApi.randomUUID === 'function') {
+            return cryptoApi.randomUUID();
+        }
+
+        if (cryptoApi && typeof cryptoApi.getRandomValues === 'function') {
+            const bytes = new Uint8Array(16);
+            cryptoApi.getRandomValues(bytes);
+            bytes[6] = (bytes[6] & 0x0f) | 0x40;
+            bytes[8] = (bytes[8] & 0x3f) | 0x80;
+            const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+            return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+        }
+
+        return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     }
 
 });
