@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const API_BASE_URL = 'http://127.0.0.1:8000';
+    const USER_ID_STORAGE_KEY = 'mushin_user_id';
     const form = document.getElementById('mushin-form');
     const submitBtn = document.getElementById('submit-btn');
     const spinner = document.getElementById('spinner');
@@ -17,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Hackathon prototype: starts with no historical streak data.
     const previousDays = [];
+    const userId = getOrCreateLocalUserId();
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -42,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify({
                     ...data,
-                    user_id: 'local-user',
+                    user_id: userId,
                     previous_days: previousDays
                 })
             });
@@ -94,6 +96,21 @@ document.addEventListener('DOMContentLoaded', () => {
             outputSection.classList.add('state-strain');
         } else if (data.state === 'BURNOUT') {
             outputSection.classList.add('state-burnout');
+        }
+    }
+
+    function getOrCreateLocalUserId() {
+        try {
+            const existingId = localStorage.getItem(USER_ID_STORAGE_KEY);
+            if (existingId && existingId.trim()) {
+                return existingId.trim();
+            }
+            const generatedId = `local-${crypto.randomUUID()}`;
+            localStorage.setItem(USER_ID_STORAGE_KEY, generatedId);
+            return generatedId;
+        } catch (error) {
+            console.warn('Local storage unavailable for user_id persistence:', error);
+            return `local-${Date.now()}`;
         }
     }
 
