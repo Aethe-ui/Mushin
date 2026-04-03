@@ -13,9 +13,10 @@ HOST = "127.0.0.1"
 PORT = 8000
 STORAGE = PrismaStorage()
 MAX_REQUEST_BYTES = int(os.getenv("MAX_REQUEST_BYTES", "1048576"))
+ALLOWED_ORIGINS_ENV = os.getenv("ALLOWED_ORIGINS", "http://127.0.0.1:5500,http://localhost:5500")
 ALLOWED_ORIGINS = {
 	origin
-	for origin in (item.strip() for item in os.getenv("ALLOWED_ORIGINS", "http://127.0.0.1:5500,http://localhost:5500").split(","))
+	for origin in (item.strip() for item in ALLOWED_ORIGINS_ENV.split(","))
 	if origin
 }
 LOGGER = logging.getLogger(__name__)
@@ -46,10 +47,10 @@ def analyze_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
 			state=str(result["state"]),
 			explanation=str(result["explanation"]),
 		)
-	except Exception as exc:
+	except Exception:
 		LOGGER.exception("Storage write failed for user_id=%s", user_id)
 		if STORAGE.enabled:
-			result["storage_warning"] = f"Storage write failed ({type(exc).__name__})."
+			result["storage_warning"] = "Storage write failed."
 		else:
 			result["storage_warning"] = "Storage write skipped (storage disabled)."
 
