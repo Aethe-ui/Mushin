@@ -14,8 +14,8 @@ PORT = 8000
 STORAGE = PrismaStorage()
 MAX_REQUEST_BYTES = int(os.getenv("MAX_REQUEST_BYTES", "1048576"))
 ALLOWED_ORIGINS_ENV = os.getenv(
-	"ALLOWED_ORIGINS",
-	"http://127.0.0.1:5500,http://localhost:5500,http://127.0.0.1:3000,http://localhost:3000",
+    "ALLOWED_ORIGINS",
+    "http://127.0.0.1:5500,http://localhost:5500,http://127.0.0.1:3000,http://localhost:3000",
 )
 ALLOWED_ORIGINS = {
 	origin
