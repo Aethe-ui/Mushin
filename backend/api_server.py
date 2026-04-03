@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Dict
@@ -13,10 +14,11 @@ PORT = 8000
 STORAGE = PrismaStorage()
 MAX_REQUEST_BYTES = int(os.getenv("MAX_REQUEST_BYTES", "1048576"))
 ALLOWED_ORIGINS = {
-	origin.strip()
-	for origin in os.getenv("ALLOWED_ORIGINS", "http://127.0.0.1:5500,http://localhost:5500").split(",")
-	if origin.strip()
+	origin
+	for origin in (item.strip() for item in os.getenv("ALLOWED_ORIGINS", "http://127.0.0.1:5500,http://localhost:5500").split(","))
+	if origin
 }
+LOGGER = logging.getLogger(__name__)
 
 def analyze_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
 	user_id = str(payload.get("user_id", "")).strip()
@@ -44,8 +46,12 @@ def analyze_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
 			state=str(result["state"]),
 			explanation=str(result["explanation"]),
 		)
-	except Exception:
-		result["storage_warning"] = "Storage write failed."
+	except Exception as exc:
+		LOGGER.exception("Storage write failed for user_id=%s", user_id)
+		if STORAGE.enabled:
+			result["storage_warning"] = f"Storage write failed ({type(exc).__name__})."
+		else:
+			result["storage_warning"] = "Storage write skipped (storage disabled)."
 
 	result["history_source"] = "prisma" if STORAGE.enabled else "request"
 	return result
@@ -55,11 +61,9 @@ class MushinAPIHandler(BaseHTTPRequestHandler):
 	def _set_headers(self, status_code: int = 200) -> None:
 		self.send_response(status_code)
 		self.send_header("Content-Type", "application/json")
-		origin = self.headers.get("Origin")
-		if origin and origin in ALLOWED_ORIGINS:
+		origin = self.headers.get("Origin", "").strip()
+		if origin in ALLOWED_ORIGINS:
 			self.send_header("Access-Control-Allow-Origin", origin)
-		elif ALLOWED_ORIGINS:
-			self.send_header("Access-Control-Allow-Origin", sorted(ALLOWED_ORIGINS)[0])
 		self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		self.send_header("Access-Control-Allow-Headers", "Content-Type")
 		self.send_header("Vary", "Origin")
