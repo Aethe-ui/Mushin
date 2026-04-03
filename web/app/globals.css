@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #080c14;
+  --bg-surface: #0f1623;
+  --bg-elevated: #1a2332;
+  --border: #1e2d42;
+  --border-active: #2a4060;
+
+  --text-primary: #e8f0fe;
+  --text-secondary: #7a9abf;
+  --text-tertiary: #3d5a7a;
+
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --accent-glow: rgba(59, 130, 246, 0.15);
+
+  --focus-active: #10b981;
+  --focus-paused: #f59e0b;
+  --focus-complete: #6366f1;
+
+  --danger: #ef4444;
+  --success: #10b981;
+
+  --background: var(--bg-primary);
+  --foreground: var(--text-primary);
+}
+
+body {
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  min-height: 100vh;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+body.focus-mode .sidebar,
+body.focus-mode .nav-secondary,
+body.focus-mode .ai-panel,
+body.focus-mode .collab-panel,
+body.focus-mode .dashboard-extras {
+  display: none !important;
+}
+
+body.focus-mode .focus-bar {
+  display: flex !important;
+}
+
+@keyframes timer-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 0.92;
+    filter: brightness(1.08);
+  }
+}
+
+.animate-timer-pulse {
+  animation: timer-pulse 4s ease-in-out infinite;
+}
