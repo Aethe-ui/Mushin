@@ -1,0 +1,25 @@
+{
+  "name": "mushin",
+  "version": "1.0.0",
+  "description": "The Focus Operating System for the AI Era.",
+  "main": "app.js",
+  "scripts": {
+    "start:frontend": "serve -s mushin-frontend -l 3000",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Aethe-ui/Mushin.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Aethe-ui/Mushin/issues"
+  },
+  "homepage": "https://github.com/Aethe-ui/Mushin#readme",
+  "devDependencies": {
+    "serve": "^14.1.1"
+  }
+}

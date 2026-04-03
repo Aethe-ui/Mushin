@@ -22,7 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = {
             focus_hours: parseFloat(formData.get('focus_hours')),
             workout_minutes: parseInt(formData.get('workout_minutes'), 10),
-            rest_hours: parseFloat(formData.get('rest_hours'))
+            rest_hours: parseFloat(formData.get('rest_hours')),
+            distraction_hours: parseFloat(formData.get('distraction_hours')) || 0
         };
 
         // UI Loading state
@@ -81,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function simulateBackendProcessing(data) {
         return new Promise((resolve) => {
             setTimeout(() => {
-                const { focus_hours, workout_minutes, rest_hours } = data;
+                const { focus_hours, workout_minutes, rest_hours, distraction_hours } = data;
                 
                 let state = 'NORMAL';
                 let performance_score = 85;
@@ -91,22 +92,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Simple logic for demonstration
                 const load = focus_hours + (workout_minutes / 60);
                 const recovery = rest_hours;
+                
+                const distraction_penalty = distraction_hours * 10;
+                const effective_load = load + (distraction_hours * 0.5);
 
-                if (recovery < 5 && load > 8) {
+                if (recovery < 5 && effective_load > 8) {
                     state = 'BURNOUT';
-                    performance_score = 42;
-                    xp_gained = 15;
-                    explanation = 'Critical deficit in recovery detected. High cognitive and physical load without adequate sleep has compromised system efficiency. Immediate rest mandated.';
-                } else if (recovery < 7 && load > 6) {
+                    performance_score = Math.max(0, Math.floor(42 - distraction_penalty));
+                    xp_gained = Math.max(0, Math.floor(15 - (distraction_hours * 3)));
+                    explanation = 'Critical deficit in recovery detected. High load without adequate sleep has compromised efficiency. Distractions have further drained capacity.';
+                } else if (recovery < 7 && effective_load > 6) {
                     state = 'STRAIN';
-                    performance_score = 68;
-                    xp_gained = 50;
-                    explanation = 'Elevated load parameters with sub-optimal recovery. Capacity is degrading. Consider increasing restorative protocols (sleep, light movement) to stabilize performance.';
+                    performance_score = Math.max(0, Math.floor(68 - distraction_penalty));
+                    xp_gained = Math.max(0, Math.floor(50 - (distraction_hours * 5)));
+                    explanation = 'Elevated load parameters with sub-optimal recovery. Consider increasing restorative protocols. Distraction hours are actively degrading performance.';
                 } else {
-                    state = 'NORMAL';
-                    performance_score = Math.min(100, Math.floor(70 + (load * 3) + (recovery * 2)));
-                    xp_gained = Math.floor(100 + (load * 20));
-                    explanation = 'Parameters nominal. Balance between capacity and recovery is optimal. Safe to maintain current output or progressively overload.';
+                    if (distraction_hours > 4) {
+                        state = 'STRAIN';
+                        performance_score = Math.max(0, Math.floor(70 - distraction_penalty));
+                        xp_gained = Math.max(0, Math.floor(40 - (distraction_hours * 5)));
+                        explanation = 'High levels of distraction are inducing cognitive strain despite adequate recovery. Focus must be recalibrated to maintain optimal state.';
+                    } else {
+                        state = 'NORMAL';
+                        performance_score = Math.max(0, Math.min(100, Math.floor(70 + (load * 3) + (recovery * 2) - distraction_penalty)));
+                        xp_gained = Math.max(0, Math.floor(100 + (load * 20) - (distraction_hours * 15)));
+                        explanation = 'Parameters nominal. Balance between capacity, recovery, and focus is optimal. Safe to maintain current output or progressively overload.';
+                    }
                 }
 
                 resolve({

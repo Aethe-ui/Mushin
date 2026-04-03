@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <div class="container">
         <header>
@@ -20,17 +22,26 @@
                 <form id="mushin-form">
                     <div class="form-group">
                         <label for="focus_hours">Focus Hours</label>
-                        <input type="number" id="focus_hours" name="focus_hours" step="0.1" min="0" required placeholder="e.g. 4.5">
+                        <input type="number" id="focus_hours" name="focus_hours" step="0.1" min="0" required
+                            placeholder="e.g. 4.5">
                     </div>
 
                     <div class="form-group">
                         <label for="workout_minutes">Workout Minutes</label>
-                        <input type="number" id="workout_minutes" name="workout_minutes" min="0" required placeholder="e.g. 45">
+                        <input type="number" id="workout_minutes" name="workout_minutes" min="0" required
+                            placeholder="e.g. 45">
                     </div>
 
                     <div class="form-group">
                         <label for="rest_hours">Rest Hours</label>
-                        <input type="number" id="rest_hours" name="rest_hours" step="0.1" min="0" required placeholder="e.g. 7.5">
+                        <input type="number" id="rest_hours" name="rest_hours" step="0.1" min="0" required
+                            placeholder="e.g. 7.5">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="distraction_hours">No. of Distractions</label>
+                        <input type="number" id="distraction_hours" name="distraction_hours" step="0.1" min="0" required
+                            placeholder="e.g. 2.0">
                     </div>
 
                     <button type="submit" class="submit-btn" id="submit-btn">
@@ -42,7 +53,7 @@
 
             <section class="card output-section" id="output-section">
                 <h2>System Output</h2>
-                
+
                 <div class="results hidden" id="results-container">
                     <div class="metrics-grid">
                         <div class="metric-box">
@@ -65,7 +76,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="empty-state" id="empty-state">
                     <p>Enter your metrics and submit to view system outputs.</p>
                 </div>
@@ -74,4 +85,5 @@
     </div>
     <script src="app.js"></script>
 </body>
+
 </html>
