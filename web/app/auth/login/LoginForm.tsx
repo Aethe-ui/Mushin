@@ -5,26 +5,45 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getPublicAppOrigin } from "@/lib/app-url";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 
-type LoginSectionProps = {
-  sectionId: "employee" | "employer";
-  heading: string;
-  description: string;
-  defaultNext: string;
-  signupHref: string;
-  signupPrompt: string;
+type LoginMode = "employee" | "employer";
+
+const LOGIN_CONFIG: Record<
+  LoginMode,
+  {
+    heading: string;
+    description: string;
+    defaultNext: string;
+    signupHref: string;
+    signupPrompt: string;
+  }
+> = {
+  employee: {
+    heading: "Employee",
+    description: "Access your workspace and personal dashboard.",
+    defaultNext: "/dashboard",
+    signupHref: "/auth/signup",
+    signupPrompt: "No account?",
+  },
+  employer: {
+    heading: "Employer",
+    description: "Manage your organization and team.",
+    defaultNext: "/employer",
+    signupHref: "/auth/employer/signup",
+    signupPrompt: "No employer account?",
+  },
 };
 
-function LoginSection({
-  sectionId,
-  heading,
-  description,
-  defaultNext,
-  signupHref,
-  signupPrompt,
-}: LoginSectionProps) {
-  const headingId = `login-heading-${sectionId}`;
+type LoginSectionProps = {
+  mode: LoginMode;
+};
+
+function LoginSection({ mode }: LoginSectionProps) {
+  const { heading, description, defaultNext, signupHref, signupPrompt } =
+    LOGIN_CONFIG[mode];
+  const headingId = `login-heading-${mode}`;
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? defaultNext;
@@ -65,7 +84,7 @@ function LoginSection({
 
   return (
     <section
-      className="flex flex-col rounded-lg border border-border bg-bg-surface p-6 sm:p-8"
+      className="flex w-full flex-col rounded-lg border border-border bg-bg-surface p-6 sm:p-8"
       aria-labelledby={headingId}
     >
       <h2 id={headingId} className="font-mono text-lg text-text-primary">
@@ -119,32 +138,49 @@ function LoginSection({
 }
 
 export function LoginForm() {
+  const [mode, setMode] = useState<LoginMode>("employee");
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4 py-10">
-      <div className="w-full max-w-3xl">
-        <header className="mb-8 text-center">
+      <div className="flex w-full max-w-sm flex-col items-center">
+        <header className="mb-6 text-center">
           <h1 className="font-mono text-2xl text-text-primary">Mushin</h1>
-          <p className="mt-2 text-sm text-text-secondary">
-            Sign in as an employee or an employer.
-          </p>
+          <p className="mt-2 text-sm text-text-secondary">Sign in to focus.</p>
         </header>
-        <div className="grid gap-6 md:grid-cols-2 md:gap-8">
-          <LoginSection
-            sectionId="employee"
-            heading="Employee"
-            description="Access your workspace and personal dashboard."
-            defaultNext="/dashboard"
-            signupHref="/auth/signup"
-            signupPrompt="No account?"
-          />
-          <LoginSection
-            sectionId="employer"
-            heading="Employer"
-            description="Manage your organization and team."
-            defaultNext="/employer"
-            signupHref="/auth/employer/signup"
-            signupPrompt="No employer account?"
-          />
+
+        <LoginSection key={mode} mode={mode} />
+
+        <div
+          className="mt-6 w-full"
+          role="group"
+          aria-label="Sign-in as employee or employer"
+        >
+          <div className="flex rounded-lg border border-border bg-bg-primary p-0.5">
+            <button
+              type="button"
+              onClick={() => setMode("employee")}
+              className={cn(
+                "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                mode === "employee"
+                  ? "bg-bg-surface text-text-primary shadow-sm"
+                  : "text-text-secondary hover:text-text-primary"
+              )}
+            >
+              Employee
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("employer")}
+              className={cn(
+                "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                mode === "employer"
+                  ? "bg-bg-surface text-text-primary shadow-sm"
+                  : "text-text-secondary hover:text-text-primary"
+              )}
+            >
+              Employer
+            </button>
+          </div>
         </div>
       </div>
     </div>
