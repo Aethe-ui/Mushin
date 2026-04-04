@@ -61,8 +61,11 @@ export function LoginForm() {
           <p className="mt-1 text-sm text-text-secondary">Sign in to focus.</p>
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
             <div>
-              <label className="text-xs text-text-tertiary">Email</label>
+              <label htmlFor="email" className="text-xs text-text-primary">
+                Email
+              </label>
               <input
+                id="email"
                 type="email"
                 required
                 value={email}
@@ -71,8 +74,11 @@ export function LoginForm() {
               />
             </div>
             <div>
-              <label className="text-xs text-text-tertiary">Password</label>
+              <label htmlFor="password" className="text-xs text-text-primary">
+                Password
+              </label>
               <input
+                id="password"
                 type="password"
                 required
                 value={password}
@@ -81,7 +87,11 @@ export function LoginForm() {
               />
             </div>
             {error && <p className="text-sm text-danger">{error}</p>}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button
+              type="submit"
+              className="w-full bg-accent-hover font-semibold text-white hover:bg-accent"
+              disabled={loading}
+            >
               {loading ? "Signing in…" : "Sign in"}
             </Button>
           </form>
@@ -93,7 +103,7 @@ export function LoginForm() {
           >
             Continue with Google
           </Button>
-          <p className="mt-6 text-center text-sm text-text-tertiary">
+          <p className="mt-6 text-center text-sm text-text-secondary">
             No account?{" "}
             <Link href="/auth/signup" className="text-accent hover:underline">
               Sign up

@@ -115,7 +115,7 @@ export default function NeuralBackground({
       init();
     };
     const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
+      const rect = container.getBoundingClientRect();
       mouse.x = e.clientX - rect.left;
       mouse.y = e.clientY - rect.top;
     };
@@ -145,7 +145,11 @@ export default function NeuralBackground({
         className
       )}
     >
-      <canvas ref={canvasRef} className="block h-full w-full" />
+      <canvas
+        ref={canvasRef}
+        className="block h-full w-full"
+        style={{ pointerEvents: "none" }}
+      />
     </div>
   );
 }
