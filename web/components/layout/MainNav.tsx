@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 const links = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/analytics", label: "Analytics" },
+  { href: "/performance", label: "Performance" },
 ];
 
 export function MainNav() {

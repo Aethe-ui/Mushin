@@ -104,3 +104,73 @@ create policy "Workspace members manage presence" on presence
   );
 
 -- Realtime: enable for workspaces and presence in Dashboard → Database → Replication
+
+/*
+── Performance tables (run in Supabase SQL Editor) ─────────────────────────────
+
+create table if not exists workout_logs (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid references auth.users(id) on delete cascade not null,
+  logged_date  date not null,
+  duration_min integer not null default 0,
+  intensity    text check (intensity in ('low','medium','high')) default 'medium',
+  created_at   timestamptz default now(),
+  unique(user_id, logged_date)
+);
+
+create table if not exists rest_logs (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid references auth.users(id) on delete cascade not null,
+  logged_date  date not null,
+  hours        numeric(4,1) not null,
+  created_at   timestamptz default now(),
+  unique(user_id, logged_date)
+);
+
+create table if not exists performance_snapshots (
+  id                 uuid primary key default gen_random_uuid(),
+  user_id            uuid references auth.users(id) on delete cascade not null,
+  snapshot_date      date not null,
+  focus_score        numeric(5,2) default 0,
+  fitness_score      numeric(5,2) default 0,
+  balance_multiplier numeric(4,3) default 1.0,
+  performance_score  numeric(5,2) default 0,
+  burnout_state      text check (burnout_state in ('NORMAL','STRAIN','BURNOUT'))
+                     default 'NORMAL',
+  xp_earned          integer default 0,
+  explanation        text,
+  created_at         timestamptz default now(),
+  unique(user_id, snapshot_date)
+);
+
+create table if not exists user_xp (
+  user_id    uuid primary key references auth.users(id) on delete cascade,
+  total_xp   integer not null default 0,
+  level      integer not null default 1,
+  updated_at timestamptz default now()
+);
+
+alter table workout_logs          enable row level security;
+alter table rest_logs             enable row level security;
+alter table performance_snapshots enable row level security;
+alter table user_xp               enable row level security;
+
+create policy "Users manage own workout_logs"
+  on workout_logs for all using (auth.uid() = user_id);
+
+create policy "Users manage own rest_logs"
+  on rest_logs for all using (auth.uid() = user_id);
+
+create policy "Users manage own performance_snapshots"
+  on performance_snapshots for all using (auth.uid() = user_id);
+
+create policy "Users manage own xp"
+  on user_xp for all using (auth.uid() = user_id);
+
+create index if not exists workout_logs_user_date
+  on workout_logs(user_id, logged_date);
+create index if not exists rest_logs_user_date
+  on rest_logs(user_id, logged_date);
+create index if not exists perf_snapshots_user_date
+  on performance_snapshots(user_id, snapshot_date);
+*/

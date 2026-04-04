@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { SessionLauncher } from "@/components/dashboard/SessionLauncher";
 import { WorkspaceCard } from "@/components/dashboard/WorkspaceCard";
 import { RecentSessions } from "@/components/dashboard/RecentSessions";
+import { PerformanceWidget } from "@/components/dashboard/PerformanceWidget";
 import { Button } from "@/components/ui/Button";
 import type { CollaboratorUser, SessionRow } from "@/types/mushin";
 
@@ -21,6 +22,7 @@ export default function DashboardPage() {
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -57,6 +59,7 @@ export default function DashboardPage() {
   }, []);
 
   async function newWorkspace() {
+    setCreateError(null);
     setCreateLoading(true);
     try {
       const res = await fetch("/api/workspaces", {
@@ -67,7 +70,13 @@ export default function DashboardPage() {
       const data = await res.json();
       if (res.ok && data.workspace?.id) {
         window.location.href = `/workspace/${data.workspace.id}`;
+        return;
       }
+      setCreateError(
+        typeof data?.error === "string"
+          ? data.error
+          : "Could not create workspace"
+      );
     } finally {
       setCreateLoading(false);
     }
@@ -96,14 +105,19 @@ export default function DashboardPage() {
           <h2 className="font-mono text-sm uppercase tracking-widest text-text-tertiary">
             Workspaces
           </h2>
-          <Button
-            variant="ghost"
-            className="text-xs"
-            disabled={createLoading}
-            onClick={() => void newWorkspace()}
-          >
-            {createLoading ? "Creating…" : "New workspace"}
-          </Button>
+          <div className="text-right">
+            <Button
+              variant="ghost"
+              className="text-xs"
+              disabled={createLoading}
+              onClick={() => void newWorkspace()}
+            >
+              {createLoading ? "Creating…" : "New workspace"}
+            </Button>
+            {createError && (
+              <p className="mt-2 text-sm text-danger">{createError}</p>
+            )}
+          </div>
         </div>
         {loading ? (
           <p className="text-sm text-text-tertiary">Loading…</p>
@@ -131,6 +145,13 @@ export default function DashboardPage() {
           Recent sessions
         </h2>
         <RecentSessions sessions={sessions} />
+      </section>
+
+      <section>
+        <h2 className="mb-3 font-mono text-sm uppercase tracking-widest text-text-tertiary">
+          Performance
+        </h2>
+        <PerformanceWidget />
       </section>
     </div>
   );

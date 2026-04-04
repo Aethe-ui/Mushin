@@ -2,82 +2,862 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MUSHIN Interface</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MUSHIN — Performance Operating System</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@300;400;500&display=swap"
+        rel="stylesheet" />
+
+    <style>
+        /* ════════════════════════════════════════
+       RESET & TOKENS
+    ════════════════════════════════════════ */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #0a0a0a;
+            --surface: #111111;
+            --surface-2: #161616;
+            --border: #1f1f1f;
+            --accent: #c8f135;
+            --accent-dim: #8aab1f;
+            --text: #e8e8e8;
+            --muted: #555;
+            --error: #ff4d4d;
+            --success: #c8f135;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Mono', monospace;
+            min-height: 100vh;
+        }
+
+        /* ════════════════════════════════════════
+       SHARED ATMOSPHERE
+    ════════════════════════════════════════ */
+        .mushin-root {
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Subtle grid — persistent across both views */
+        .mushin-root::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(200, 241, 53, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(200, 241, 53, 0.03) 1px, transparent 1px);
+            background-size: 48px 48px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Accent orb — top-right */
+        .mushin-root::after {
+            content: '';
+            position: fixed;
+            top: -180px;
+            right: -180px;
+            width: 520px;
+            height: 520px;
+            background: radial-gradient(circle, rgba(200, 241, 53, 0.07) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+
+        /* ════════════════════════════════════════
+       ① AUTH VIEW
+    ════════════════════════════════════════ */
+        #auth-view {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 420px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 48px 40px;
+            position: relative;
+            animation: fadeUp 0.5s ease both;
+        }
+
+        .auth-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+
+        /* ── Brand ── */
+        .brand {
+            margin-bottom: 36px;
+        }
+
+        .brand-mark {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 26px;
+            letter-spacing: -0.5px;
+            color: var(--accent);
+        }
+
+        .brand-sub {
+            font-size: 10px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        /* ── Tabs ── */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 32px;
+        }
+
+        .tab {
+            flex: 1;
+            background: none;
+            border: none;
+            padding: 10px 0;
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            transition: color 0.2s, border-color 0.2s;
+        }
+
+        .tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        /* ── Auth fields ── */
+        .field {
+            margin-bottom: 18px;
+        }
+
+        .label {
+            display: block;
+            font-size: 10px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .input {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: 'DM Mono', monospace;
+            font-size: 13px;
+            padding: 12px 14px;
+            outline: none;
+            transition: border-color 0.2s;
+            -webkit-appearance: none;
+        }
+
+        .input:focus {
+            border-color: var(--accent);
+        }
+
+        .input::placeholder {
+            color: #333;
+        }
+
+        /* ── Primary button ── */
+        .btn {
+            width: 100%;
+            background: var(--accent);
+            color: #0a0a0a;
+            border: none;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 14px;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.2s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: #d4f548;
+        }
+
+        .btn:active:not(:disabled) {
+            transform: scale(0.99);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ── Ghost button ── */
+        .btn-ghost {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 10px 18px;
+            cursor: pointer;
+            transition: border-color 0.2s, color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--error);
+            color: var(--error);
+        }
+
+        /* ── Status message ── */
+        .msg {
+            font-size: 11px;
+            padding: 10px 12px;
+            margin-top: 16px;
+            border-left: 2px solid;
+            line-height: 1.5;
+            display: none;
+        }
+
+        .msg.error {
+            color: var(--error);
+            border-color: var(--error);
+            background: rgba(255, 77, 77, 0.06);
+        }
+
+        .msg.success {
+            color: var(--success);
+            border-color: var(--success);
+            background: rgba(200, 241, 53, 0.06);
+        }
+
+        /* ── Session panel (inside auth card) ── */
+        .session-panel {
+            text-align: center;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        .session-icon {
+            font-size: 36px;
+            margin-bottom: 16px;
+        }
+
+        .state-badge-auth {
+            display: inline-block;
+            font-size: 10px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 3px 10px;
+            margin-bottom: 24px;
+        }
+
+        .session-label {
+            font-size: 10px;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .session-email-display {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--accent);
+            margin-bottom: 4px;
+            word-break: break-all;
+        }
+
+        .session-uid-display {
+            font-size: 10px;
+            color: var(--muted);
+            margin-bottom: 28px;
+            word-break: break-all;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 24px 0;
+        }
+
+        /* ── Spinner ── */
+        .spinner {
+            display: none;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(0, 0, 0, 0.3);
+            border-top-color: #0a0a0a;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            flex-shrink: 0;
+        }
+
+        .btn-ghost .spinner {
+            border-color: rgba(255, 255, 255, 0.15);
+            border-top-color: var(--muted);
+        }
+
+
+        /* ════════════════════════════════════════
+       ② DASHBOARD VIEW
+    ════════════════════════════════════════ */
+        #dashboard-view {
+            display: none;
+            /* shown by auth.js on login */
+            min-height: 100vh;
+            padding: 0 32px 64px;
+            position: relative;
+            z-index: 1;
+            animation: fadeUp 0.5s ease both;
+        }
+
+        /* ── Top bar ── */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 28px 0 40px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 48px;
+        }
+
+        .topbar-brand {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .topbar-brand .brand-mark {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 22px;
+            letter-spacing: -0.5px;
+            color: var(--accent);
+        }
+
+        .topbar-brand .brand-sub {
+            font-size: 10px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .topbar-user {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .topbar-email {
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: 0.04em;
+        }
+
+        /* ── Dashboard grid ── */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            max-width: 960px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 680px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            #dashboard-view {
+                padding: 0 20px 48px;
+            }
+
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+        }
+
+        /* ── Panel cards ── */
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 32px;
+            position: relative;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border), transparent);
+        }
+
+        .panel-title {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 11px;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 28px;
+        }
+
+        /* ── Dashboard form fields ── */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 10px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: 'DM Mono', monospace;
+            font-size: 13px;
+            padding: 12px 14px;
+            outline: none;
+            transition: border-color 0.2s;
+            -webkit-appearance: none;
+            -moz-appearance: textfield;
+        }
+
+        .form-group input::-webkit-inner-spin-button,
+        .form-group input::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+        }
+
+        .form-group input:focus {
+            border-color: var(--accent);
+        }
+
+        .form-group input::placeholder {
+            color: #333;
+        }
+
+        /* ── Submit button (dashboard) ── */
+        /* Uses existing app.js class: .submit-btn + #submit-btn */
+        .submit-btn {
+            width: 100%;
+            background: var(--accent);
+            color: #0a0a0a;
+            border: none;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 14px;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.2s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            background: #d4f548;
+        }
+
+        .submit-btn:active:not(:disabled) {
+            transform: scale(0.99);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* app.js spinner (#spinner) sits inside .submit-btn */
+        .submit-btn .spinner,
+        #spinner {
+            border-color: rgba(0, 0, 0, 0.25);
+            border-top-color: #0a0a0a;
+        }
+
+        /* ── Output panel ── */
+        /* State color variants — applied by app.js */
+        .state-normal {
+            --state-color: var(--accent);
+        }
+
+        .state-strain {
+            --state-color: #f5a623;
+        }
+
+        .state-burnout {
+            --state-color: var(--error);
+        }
+
+        .output-section.state-normal::before,
+        .output-section.state-strain::before,
+        .output-section.state-burnout::before {
+            background: linear-gradient(90deg, transparent, var(--state-color), transparent);
+        }
+
+        /* ── Metrics grid ── */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .metric-box {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 20px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .metric-label {
+            font-size: 9px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .metric-value {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 28px;
+            color: var(--accent);
+            letter-spacing: -1px;
+        }
+
+        /* ── State block ── */
+        .state-container {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 20px;
+        }
+
+        .state-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .state-header-label {
+            font-size: 10px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        /* #state-badge — written by app.js */
+        #state-badge {
+            font-family: 'DM Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 3px 10px;
+            transition: color 0.2s, border-color 0.2s;
+        }
+
+        .state-normal #state-badge {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .state-strain #state-badge {
+            color: #f5a623;
+            border-color: #f5a623;
+        }
+
+        .state-burnout #state-badge {
+            color: var(--error);
+            border-color: var(--error);
+        }
+
+        #state-explanation {
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        /* ── Empty state ── */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+            gap: 12px;
+        }
+
+        .empty-state-icon {
+            font-size: 28px;
+            color: var(--border);
+        }
+
+        .empty-state p {
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: 0.06em;
+            text-align: center;
+            line-height: 1.8;
+        }
+    </style>
 </head>
 
 <body>
-    <div class="container">
-        <header>
-            <h1>MUSHIN System</h1>
-            <p>Data Input & Analysis</p>
-        </header>
 
-        <main>
-            <section class="card input-section">
-                <h2>Input Metrics</h2>
-                <form id="mushin-form">
-                    <div class="form-group">
-                        <label for="focus_hours">Focus Hours</label>
-                        <input type="number" id="focus_hours" name="focus_hours" step="0.1" min="0" required
-                            placeholder="e.g. 4.5">
+    <div class="mushin-root">
+
+        <!-- ══════════════════════════════════════════════════
+       ① AUTH VIEW  — shown when logged out
+  ══════════════════════════════════════════════════ -->
+        <div id="auth-view">
+            <div class="auth-card">
+
+                <div class="brand">
+                    <div class="brand-mark">MUSHIN</div>
+                    <div class="brand-sub">Performance Operating System</div>
+                </div>
+
+                <!-- Auth form -->
+                <div id="auth-card-inner">
+                    <div class="tabs">
+                        <button class="tab active" data-tab="signin">Sign In</button>
+                        <button class="tab" data-tab="signup">Sign Up</button>
                     </div>
 
-                    <div class="form-group">
-                        <label for="workout_minutes">Workout Minutes</label>
-                        <input type="number" id="workout_minutes" name="workout_minutes" min="0" required
-                            placeholder="e.g. 45">
+                    <div class="field">
+                        <label class="label" for="auth-email">Email</label>
+                        <input class="input" type="email" id="auth-email" placeholder="you@domain.com"
+                            autocomplete="email" />
                     </div>
 
-                    <div class="form-group">
-                        <label for="rest_hours">Rest Hours</label>
-                        <input type="number" id="rest_hours" name="rest_hours" step="0.1" min="0" required
-                            placeholder="e.g. 7.5">
+                    <div class="field">
+                        <label class="label" for="auth-password">Password</label>
+                        <input class="input" type="password" id="auth-password" placeholder="••••••••"
+                            autocomplete="current-password" />
                     </div>
 
-                    <button type="submit" class="submit-btn" id="submit-btn">
-                        <span>Analyze Day</span>
-                        <div class="spinner hidden" id="spinner"></div>
+                    <button class="btn" id="auth-submit-btn">
+                        <span class="spinner" id="auth-spinner"></span>
+                        <span id="auth-btn-text">Enter System</span>
                     </button>
-                </form>
-            </section>
 
-            <section class="card output-section" id="output-section">
-                <h2>System Output</h2>
+                    <div class="msg" id="auth-msg"></div>
+                </div>
 
-                <div class="results hidden" id="results-container">
-                    <div class="metrics-grid">
-                        <div class="metric-box">
-                            <span class="metric-label">Performance Score</span>
-                            <span class="metric-value" id="perf-score">--</span>
+                <!-- Session panel (brief logged-in state before dashboard appears) -->
+                <div id="session-panel" style="display:none;">
+                    <div class="session-icon">◈</div>
+                    <div class="state-badge-auth">NORMAL</div>
+                    <div class="session-label">Authenticated as</div>
+                    <div class="session-email-display" id="session-email"></div>
+                    <div class="session-uid-display" id="session-uid"></div>
+                    <div class="divider"></div>
+                    <button class="btn-ghost" id="signout-btn">
+                        <span class="spinner" id="signout-spinner"></span>
+                        <span id="signout-text">→ Sign Out</span>
+                    </button>
+                </div>
+
+            </div>
+        </div><!-- /#auth-view -->
+
+
+        <!-- ══════════════════════════════════════════════════
+       ② DASHBOARD VIEW  — shown when logged in
+  ══════════════════════════════════════════════════ -->
+        <div id="dashboard-view">
+
+            <!-- Top bar -->
+            <div class="topbar">
+                <div class="topbar-brand">
+                    <div class="brand-mark">MUSHIN</div>
+                    <div class="brand-sub">Performance Operating System</div>
+                </div>
+                <div class="topbar-user">
+                    <span class="topbar-email" id="topbar-email"></span>
+                    <button class="btn-ghost" id="dashboard-signout-btn">
+                        <span class="spinner" id="dashboard-signout-spinner"></span>
+                        <span id="dashboard-signout-text">→ Sign Out</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Two-column grid -->
+            <div class="dashboard-grid">
+
+                <!-- ── Input panel ── -->
+                <!-- All IDs (#mushin-form, #submit-btn, #spinner) match app.js exactly -->
+                <div class="panel">
+                    <div class="panel-title">Input Metrics</div>
+                    <form id="mushin-form">
+
+                        <div class="form-group">
+                            <label for="focus_hours">Focus Hours</label>
+                            <input type="number" id="focus_hours" name="focus_hours" step="0.1" min="0" required
+                                placeholder="e.g. 4.5" />
                         </div>
-                        <div class="metric-box">
-                            <span class="metric-label">XP Gained</span>
-                            <span class="metric-value" id="xp-gained">--</span>
+
+                        <div class="form-group">
+                            <label for="workout_minutes">Workout Minutes</label>
+                            <input type="number" id="workout_minutes" name="workout_minutes" min="0" required
+                                placeholder="e.g. 45" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="rest_hours">Rest Hours</label>
+                            <input type="number" id="rest_hours" name="rest_hours" step="0.1" min="0" required
+                                placeholder="e.g. 7.5" />
+                        </div>
+
+                        <button type="submit" class="submit-btn" id="submit-btn">
+                            <span>Analyze Day</span>
+                            <div class="spinner hidden" id="spinner"></div>
+                        </button>
+
+                    </form>
+                </div>
+
+                <!-- ── Output panel ── -->
+                <!-- All IDs (#output-section, #results-container, #empty-state,
+           #perf-score, #xp-gained, #state-badge, #state-explanation)
+           match app.js exactly -->
+                <div class="panel output-section" id="output-section">
+                    <div class="panel-title">System Output</div>
+
+                    <div class="results hidden" id="results-container">
+                        <div class="metrics-grid">
+                            <div class="metric-box">
+                                <span class="metric-label">Performance Score</span>
+                                <span class="metric-value" id="perf-score">--</span>
+                            </div>
+                            <div class="metric-box">
+                                <span class="metric-label">XP Gained</span>
+                                <span class="metric-value" id="xp-gained">--</span>
+                            </div>
+                        </div>
+
+                        <div class="state-container" id="state-container">
+                            <div class="state-header">
+                                <span class="state-header-label">Current State</span>
+                                <span class="state-badge" id="state-badge">UNKNOWN</span>
+                            </div>
+                            <div id="state-explanation">
+                                Run analysis to see your current state.
+                            </div>
                         </div>
                     </div>
 
-                    <div class="state-container" id="state-container">
-                        <div class="state-header">
-                            <h3>Current State</h3>
-                            <span class="state-badge" id="state-badge">UNKNOWN</span>
-                        </div>
-                        <div class="state-explanation" id="state-explanation">
-                            Run analysis to see current state explanation.
-                        </div>
+                    <div class="empty-state" id="empty-state">
+                        <div class="empty-state-icon">◌</div>
+                        <p>Enter your metrics and submit<br />to view system output.</p>
                     </div>
+
                 </div>
 
-                <div class="empty-state" id="empty-state">
-                    <p>Enter your metrics and submit to view system outputs.</p>
-                </div>
-            </section>
-        </main>
-    </div>
+            </div><!-- /.dashboard-grid -->
+        </div><!-- /#dashboard-view -->
+
+    </div><!-- /.mushin-root -->
+
+
+    <!-- Supabase CDN — must load before auth.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Auth (manages #auth-view ↔ #dashboard-view switching) -->
+    <script src="auth.js"></script>
+
+    <!-- Main app logic (form submit → API → displayResults) -->
     <script src="app.js"></script>
+
 </body>
 
 </html>
