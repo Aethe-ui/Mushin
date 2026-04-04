@@ -359,6 +359,7 @@ export async function runBurnoutCompute(
   riskScore: BurnoutRiskScore;
   escalationEvent: BurnoutRiskEvent | null;
   todayXPMultiplier: number;
+  previousLevel: RiskLevel | null;
 }> {
   const { result, previousLevel } = await computeBurnoutForDate(
     supabase,
@@ -400,5 +401,6 @@ export async function runBurnoutCompute(
     riskScore: row,
     escalationEvent,
     todayXPMultiplier,
+    previousLevel,
   };
 }

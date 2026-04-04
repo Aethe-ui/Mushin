@@ -9,6 +9,10 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionUser } from "@/lib/auth";
 import { runBurnoutCompute } from "@/lib/burnout-sync";
+import {
+  getOrgIdForUser,
+  writeAccountabilityLog,
+} from "@/lib/employer-sync";
 import type { BurnoutComputeResponse } from "@/types/performance";
 
 export async function POST() {
@@ -21,10 +25,27 @@ export async function POST() {
   const supabase = createClient();
 
   try {
-    const { riskScore, escalationEvent, todayXPMultiplier } =
-      await runBurnoutCompute(supabase, user.id, scoreDate, {
-        reconcileSnapshotXp: true,
-      });
+    const {
+      riskScore,
+      escalationEvent,
+      todayXPMultiplier,
+      result,
+      previousLevel,
+    } = await runBurnoutCompute(supabase, user.id, scoreDate, {
+      reconcileSnapshotXp: true,
+    });
+
+    const orgId = await getOrgIdForUser(supabase, user.id);
+    if (orgId) {
+      await writeAccountabilityLog(
+        supabase,
+        user.id,
+        orgId,
+        result,
+        previousLevel,
+        scoreDate
+      );
+    }
 
     const body: BurnoutComputeResponse = {
       riskScore,

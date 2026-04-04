@@ -42,3 +42,20 @@ export function initialsFromEmail(email: string | undefined | null): string {
   }
   return local.slice(0, 2).toUpperCase();
 }
+
+/** Relative label for an ISO timestamp, e.g. "2h ago", "3d ago". */
+export function formatRelativeTime(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const t = new Date(iso).getTime();
+  if (!Number.isFinite(t)) return "—";
+  const sec = Math.max(0, Math.floor((Date.now() - t) / 1000));
+  if (sec < 60) return "just now";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const h = Math.floor(min / 60);
+  if (h < 48) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 14) return `${d}d ago`;
+  const w = Math.floor(d / 7);
+  return `${w}w ago`;
+}

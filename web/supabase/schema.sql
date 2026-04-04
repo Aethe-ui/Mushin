@@ -253,3 +253,114 @@ CREATE POLICY "Users manage own burnout_risk_events"
 
 CREATE INDEX IF NOT EXISTS bre_user_date_idx
   ON public.burnout_risk_events (user_id, event_date DESC);
+
+-- ─────────────────────────────────────────────────────────────
+-- Employer / organizations (Employer Dashboard)
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.organizations (
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name       text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.org_members (
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id       uuid NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+  user_id      uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role         text NOT NULL DEFAULT 'member'
+               CHECK (role IN ('admin', 'manager', 'member')),
+  display_name text,
+  joined_at    timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (org_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS public.employer_alerts (
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id       uuid NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+  user_id      uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  alert_type   text NOT NULL CHECK (alert_type IN ('WARNING', 'CRITICAL')),
+  risk_level   text NOT NULL CHECK (risk_level IN ('LOW', 'MODERATE', 'HIGH', 'CRITICAL')),
+  message      text NOT NULL,
+  status       text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'resolved')),
+  resolved_at  timestamptz,
+  created_at   timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS public.accountability_logs (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id      uuid NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+  user_id     uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  log_date    date NOT NULL DEFAULT CURRENT_DATE,
+  event_type  text NOT NULL,
+  description text NOT NULL,
+  metadata    jsonb DEFAULT '{}'::jsonb,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS org_members_org_idx ON public.org_members (org_id);
+CREATE INDEX IF NOT EXISTS org_members_user_idx ON public.org_members (user_id);
+CREATE INDEX IF NOT EXISTS alerts_org_user_idx ON public.employer_alerts (org_id, user_id);
+CREATE INDEX IF NOT EXISTS alerts_status_idx ON public.employer_alerts (status);
+CREATE INDEX IF NOT EXISTS acct_log_org_user_idx ON public.accountability_logs (org_id, user_id);
+CREATE INDEX IF NOT EXISTS acct_log_date_idx ON public.accountability_logs (log_date DESC);
+
+ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.org_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.employer_alerts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.accountability_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE OR REPLACE FUNCTION public.is_org_admin(p_org_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM org_members
+    WHERE org_id = p_org_id
+      AND user_id = auth.uid()
+      AND role IN ('admin', 'manager')
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_org_member(p_org_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM org_members
+    WHERE org_id = p_org_id AND user_id = auth.uid()
+  );
+$$;
+
+REVOKE ALL ON FUNCTION public.is_org_admin(uuid) FROM public;
+GRANT EXECUTE ON FUNCTION public.is_org_admin(uuid) TO authenticated, service_role;
+
+REVOKE ALL ON FUNCTION public.is_org_member(uuid) FROM public;
+GRANT EXECUTE ON FUNCTION public.is_org_member(uuid) TO authenticated, service_role;
+
+CREATE POLICY "org_members_read_org" ON public.organizations
+  FOR SELECT USING (is_org_member(id));
+
+CREATE POLICY "admin_read_members" ON public.org_members
+  FOR SELECT USING (is_org_admin(org_id) OR user_id = auth.uid());
+
+CREATE POLICY "admin_manage_members" ON public.org_members
+  FOR ALL USING (is_org_admin(org_id));
+
+CREATE POLICY "admin_manage_alerts" ON public.employer_alerts
+  FOR ALL USING (is_org_admin(org_id));
+
+CREATE POLICY "member_read_own_alerts" ON public.employer_alerts
+  FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "member_insert_own_employer_alert" ON public.employer_alerts
+  FOR INSERT WITH CHECK (user_id = auth.uid() AND is_org_member(org_id));
+
+CREATE POLICY "member_update_own_active_employer_alert" ON public.employer_alerts
+  FOR UPDATE USING (user_id = auth.uid() AND is_org_member(org_id));
+
+CREATE POLICY "admin_read_logs" ON public.accountability_logs
+  FOR ALL USING (is_org_admin(org_id));
+
+CREATE POLICY "member_read_own_logs" ON public.accountability_logs
+  FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "member_insert_own_accountability" ON public.accountability_logs
+  FOR INSERT WITH CHECK (user_id = auth.uid() AND is_org_member(org_id));

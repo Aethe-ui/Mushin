@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import type { RiskLevel } from "@/types/performance";
 
-const LEVEL_STROKE: Record<RiskLevel, string> = {
+export const LEVEL_STROKE: Record<RiskLevel, string> = {
   LOW: "#10b981",
   MODERATE: "#f59e0b",
   HIGH: "#ef4444",
