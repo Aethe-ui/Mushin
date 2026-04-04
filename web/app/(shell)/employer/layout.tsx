@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionUser } from "@/lib/auth";
@@ -7,6 +8,11 @@ export default async function EmployerLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = headers().get("x-pathname") ?? "";
+  if (pathname === "/employer/setup" || pathname.startsWith("/employer/setup/")) {
+    return <div className="mx-auto w-full max-w-6xl">{children}</div>;
+  }
+
   const user = await getSessionUser();
   if (!user) {
     redirect("/auth/login");

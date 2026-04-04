@@ -364,3 +364,78 @@ CREATE POLICY "member_read_own_logs" ON public.accountability_logs
 
 CREATE POLICY "member_insert_own_accountability" ON public.accountability_logs
   FOR INSERT WITH CHECK (user_id = auth.uid() AND is_org_member(org_id));
+
+-- ─────────────────────────────────────────────────────────────
+-- Org invitations & organization owner (Employer invites)
+-- ─────────────────────────────────────────────────────────────
+
+ALTER TABLE public.organizations
+  ADD COLUMN IF NOT EXISTS owner_id uuid REFERENCES auth.users(id) ON DELETE SET NULL;
+
+DROP POLICY IF EXISTS "org_members_read_org" ON public.organizations;
+CREATE POLICY "members_read_own_org" ON public.organizations
+  FOR SELECT USING (is_org_member(id));
+
+CREATE POLICY "admin_update_org" ON public.organizations
+  FOR UPDATE USING (is_org_admin(id));
+
+CREATE POLICY "auth_create_org" ON public.organizations
+  FOR INSERT WITH CHECK (
+    auth.uid() IS NOT NULL
+    AND owner_id = auth.uid()
+  );
+
+CREATE POLICY "org_owner_insert_self" ON public.org_members
+  FOR INSERT WITH CHECK (
+    auth.uid() = user_id
+    AND role = 'admin'
+    AND EXISTS (
+      SELECT 1 FROM public.organizations o
+      WHERE o.id = org_id AND o.owner_id = auth.uid()
+    )
+  );
+
+CREATE TABLE IF NOT EXISTS public.org_invitations (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id        uuid NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+  invited_by    uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  email         text NOT NULL,
+  role          text NOT NULL DEFAULT 'member'
+                CHECK (role IN ('manager', 'member')),
+  status        text NOT NULL DEFAULT 'pending'
+                CHECK (status IN ('pending', 'accepted', 'rejected', 'expired')),
+  token         uuid NOT NULL DEFAULT gen_random_uuid() UNIQUE,
+  expires_at    timestamptz NOT NULL DEFAULT (now() + INTERVAL '7 days'),
+  responded_at  timestamptz,
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (org_id, email)
+);
+
+CREATE INDEX IF NOT EXISTS inv_org_idx   ON public.org_invitations (org_id);
+CREATE INDEX IF NOT EXISTS inv_email_idx ON public.org_invitations (email);
+CREATE INDEX IF NOT EXISTS inv_token_idx ON public.org_invitations (token);
+CREATE INDEX IF NOT EXISTS inv_status_idx ON public.org_invitations (status);
+
+ALTER TABLE public.org_invitations ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "admin_manage_invitations" ON public.org_invitations
+  FOR ALL USING (is_org_admin(org_id));
+
+CREATE OR REPLACE FUNCTION public.on_org_created()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NEW.owner_id IS NOT NULL THEN
+    INSERT INTO public.org_members (org_id, user_id, role, display_name)
+    VALUES (NEW.id, NEW.owner_id, 'admin', NULL)
+    ON CONFLICT (org_id, user_id) DO NOTHING;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_org_created ON public.organizations;
+CREATE TRIGGER trg_org_created
+  AFTER INSERT ON public.organizations
+  FOR EACH ROW EXECUTE FUNCTION public.on_org_created();

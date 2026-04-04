@@ -24,6 +24,21 @@ export function parseOrgIdParam(request: Request): string | null {
   return parseUuidOrNull(searchParams.get("org_id"));
 }
 
+/** Resolve auth user id by email via Admin API (paginated; fine for modest user counts). */
+export async function findUserIdByEmail(
+  svc: SupabaseClient,
+  email: string
+): Promise<string | null> {
+  const normalized = email.trim().toLowerCase();
+  try {
+    const { data } = await svc.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    const u = data?.users?.find((x) => x.email?.toLowerCase() === normalized);
+    return u?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchUserEmailsById(
   svc: SupabaseClient,
   userIds: string[]

@@ -92,3 +92,34 @@ export type SortKey =
   | "current_state";
 export type FilterState = BurnoutState | "ALL";
 export type FilterRisk = RiskLevel | "ALL";
+
+// ── Invitation types ──────────────────────────────────────────
+export type InvitationStatus = "pending" | "accepted" | "rejected" | "expired";
+export type InvitationRole = "manager" | "member";
+
+export interface OrgInvitation {
+  id: string;
+  org_id: string;
+  invited_by: string;
+  email: string;
+  role: InvitationRole;
+  status: InvitationStatus;
+  token: string;
+  expires_at: string;
+  responded_at: string | null;
+  created_at: string;
+  /** Joined from organizations table — present on detail views */
+  org_name?: string;
+  /** Joined from org_members — inviter display info */
+  inviter_email?: string;
+}
+
+export interface CreateOrgPayload {
+  name: string;
+}
+
+export interface InviteEmployeePayload {
+  org_id: string;
+  email: string;
+  role: InvitationRole;
+}

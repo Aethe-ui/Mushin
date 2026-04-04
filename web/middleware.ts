@@ -1,11 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const AUTH_PREFIX = "/auth";
-
 export async function middleware(request: NextRequest) {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", request.nextUrl.pathname);
+
   let supabaseResponse = NextResponse.next({
-    request,
+    request: {
+      headers: requestHeaders,
+    },
   });
 
   const supabase = createServerClient(
@@ -21,7 +24,9 @@ export async function middleware(request: NextRequest) {
             request.cookies.set(name, value)
           );
           supabaseResponse = NextResponse.next({
-            request,
+            request: {
+              headers: requestHeaders,
+            },
           });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
@@ -41,21 +46,23 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse;
   }
 
-  const isAuthRoute =
-    path.startsWith(`${AUTH_PREFIX}/login`) ||
-    path.startsWith(`${AUTH_PREFIX}/signup`) ||
-    path.startsWith(`${AUTH_PREFIX}/callback`);
+  const isAuthPage = path.startsWith("/auth/");
+  const isInvitePage = path.startsWith("/invite/");
+  const isPublic = isAuthPage || isInvitePage;
 
-  if (!user && !isAuthRoute) {
+  if (!user && !isPublic) {
     const url = request.nextUrl.clone();
-    url.pathname = `${AUTH_PREFIX}/login`;
+    url.pathname = "/auth/login";
     url.searchParams.set("next", path);
     return NextResponse.redirect(url);
   }
 
   if (
     user &&
-    (path === `${AUTH_PREFIX}/login` || path === `${AUTH_PREFIX}/signup`)
+    (path === "/auth/login" ||
+      path === "/auth/signup" ||
+      path === "/auth/employer/login" ||
+      path === "/auth/employer/signup")
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";

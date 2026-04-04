@@ -7,6 +7,7 @@ import { AlertFeed } from "@/components/employer/AlertFeed";
 import { EmployeeTable } from "@/components/employer/EmployeeTable";
 import { FilterSortBar } from "@/components/employer/FilterSortBar";
 import { RiskDistributionChart } from "@/components/employer/RiskDistributionChart";
+import { InvitePanel } from "@/components/employer/InvitePanel";
 import { TeamSummaryCards } from "@/components/employer/TeamSummaryCards";
 import { parseUuidOrNull } from "@/lib/utils";
 import type {
@@ -171,9 +172,12 @@ export default function EmployerDashboardPage() {
     return (
       <div className="rounded-lg border border-border bg-bg-surface p-6 text-center text-text-secondary">
         <p className="font-mono text-sm">
-          No organization linked to your account. Ask an admin to add you to{" "}
-          <code className="text-text-primary">org_members</code> with role{" "}
-          <code className="text-text-primary">admin</code> or{" "}
+          No organization linked to your account.{" "}
+          <a href="/employer/setup" className="text-accent hover:underline">
+            Create an organization
+          </a>{" "}
+          or ask an admin to add you to <code className="text-text-primary">org_members</code>{" "}
+          with role <code className="text-text-primary">admin</code> or{" "}
           <code className="text-text-primary">manager</code>.
         </p>
       </div>
@@ -207,6 +211,8 @@ export default function EmployerDashboardPage() {
       )}
 
       <TeamSummaryCards team={team} />
+
+      {orgId && <InvitePanel orgId={orgId} />}
 
       <div className="grid gap-6 md:grid-cols-3">
         <div className="md:col-span-2">
