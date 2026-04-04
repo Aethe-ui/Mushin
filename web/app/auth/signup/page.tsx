@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getPublicAppOrigin } from "@/lib/app-url";
-import { Hero } from "@/components/ui/hero";
 import { Button } from "@/components/ui/Button";
 
 export default function SignupPage() {
@@ -47,15 +46,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      <div className="fixed inset-0 -z-10">
-        <Hero
-          title=""
-          showMarketingContent={false}
-          className="min-h-screen rounded-none"
-        />
-      </div>
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4">
+    <div className="flex min-h-screen flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-lg border border-border bg-bg-surface p-8">
         <h1 className="font-mono text-xl text-text-primary">Create account</h1>
         <p className="mt-1 text-sm text-text-secondary">Join Mushin.</p>
@@ -108,7 +99,6 @@ export default function SignupPage() {
             Sign in
           </Link>
         </p>
-      </div>
       </div>
     </div>
   );

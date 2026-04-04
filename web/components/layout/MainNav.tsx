@@ -7,17 +7,15 @@ import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 
-const baseLinks = [
+const links = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/analytics", label: "Analytics" },
   { href: "/performance", label: "Performance" },
-  { href: "/burnout", label: "Burnout Risk" },
 ];
 
 export function MainNav() {
   const pathname = usePathname();
   const [dbOk, setDbOk] = useState<boolean | null>(null);
-  const [isEmployerAdmin, setIsEmployerAdmin] = useState(false);
 
   useEffect(() => {
     void fetch("/api/health")
@@ -25,19 +23,6 @@ export function MainNav() {
       .then((d: { db?: string }) => setDbOk(d.db === "connected"))
       .catch(() => setDbOk(false));
   }, []);
-
-  useEffect(() => {
-    void fetch("/api/employer/check-role")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: { isAdmin?: boolean } | null) =>
-        setIsEmployerAdmin(Boolean(d?.isAdmin))
-      )
-      .catch(() => setIsEmployerAdmin(false));
-  }, []);
-
-  const links = isEmployerAdmin
-    ? [...baseLinks, { href: "/employer", label: "Team Dashboard" }]
-    : baseLinks;
 
   async function signOut() {
     const supabase = createClient();

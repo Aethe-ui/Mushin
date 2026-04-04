@@ -11,25 +11,6 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
-        primary: {
-          DEFAULT: "var(--primary)",
-          foreground: "var(--primary-foreground)",
-        },
-        secondary: {
-          DEFAULT: "var(--secondary)",
-          foreground: "var(--secondary-foreground)",
-        },
-        muted: {
-          DEFAULT: "var(--muted)",
-          foreground: "var(--muted-foreground)",
-        },
-        destructive: {
-          DEFAULT: "var(--destructive)",
-          foreground: "var(--destructive-foreground)",
-        },
-        input: "var(--input)",
-        ring: "var(--ring)",
-        "accent-foreground": "var(--accent-foreground)",
         "bg-primary": "var(--bg-primary)",
         "bg-surface": "var(--bg-surface)",
         "bg-elevated": "var(--bg-elevated)",
@@ -45,13 +26,6 @@ const config: Config = {
         "focus-complete": "var(--focus-complete)",
         danger: "var(--danger)",
         success: "var(--success)",
-      },
-      ringOffsetColor: {
-        background: "var(--background)",
-      },
-      backgroundImage: {
-        "gradient-conic":
-          "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
       },
       fontFamily: {
         sans: ["var(--font-dm-sans)", "system-ui", "sans-serif"],
