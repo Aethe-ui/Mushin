@@ -125,17 +125,21 @@ export function detectBurnoutState(
   return "NORMAL";
 }
 
+export function burnoutStateXPMultiplier(state: BurnoutState): number {
+  if (state === "BURNOUT") return BURNOUT_XP_MULT;
+  if (state === "STRAIN") return STRAIN_XP_MULT;
+  return 1.0;
+}
+
 export function computeXP(
   performanceScore: number,
-  burnoutState: BurnoutState
+  burnoutState: BurnoutState,
+  riskPenaltyMult: number = 1
 ): number {
-  const mult =
-    burnoutState === "BURNOUT"
-      ? BURNOUT_XP_MULT
-      : burnoutState === "STRAIN"
-        ? STRAIN_XP_MULT
-        : 1.0;
-  return Math.round(performanceScore * XP_PER_POINT * mult);
+  const mult = burnoutStateXPMultiplier(burnoutState);
+  return Math.round(
+    performanceScore * XP_PER_POINT * mult * riskPenaltyMult
+  );
 }
 
 export function computeLevel(totalXP: number): {

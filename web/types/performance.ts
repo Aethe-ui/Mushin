@@ -1,5 +1,46 @@
 export type BurnoutState = "NORMAL" | "STRAIN" | "BURNOUT";
 
+export type RiskLevel = "LOW" | "MODERATE" | "HIGH" | "CRITICAL";
+
+export interface BurnoutRiskScore {
+  id: string;
+  user_id: string;
+  score_date: string;
+  risk_score: number;
+  workload_score: number;
+  recovery_score: number;
+  consistency_score: number;
+  risk_level: RiskLevel;
+  explanation: string | null;
+  suggestions: string[];
+  xp_penalty_mult: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BurnoutRiskEvent {
+  id: string;
+  user_id: string;
+  event_date: string;
+  from_level: RiskLevel;
+  to_level: RiskLevel;
+  trigger_facts: string[];
+  created_at: string;
+}
+
+export interface BurnoutHistoryResponse {
+  scores: BurnoutRiskScore[];
+  events: BurnoutRiskEvent[];
+  currentLevel: RiskLevel;
+  trend: "IMPROVING" | "STABLE" | "WORSENING";
+}
+
+export interface BurnoutComputeResponse {
+  riskScore: BurnoutRiskScore;
+  escalationEvent?: BurnoutRiskEvent;
+  todayXPMultiplier: number;
+}
+
 export type WorkoutIntensity = "low" | "medium" | "high" | "none";
 
 export interface WorkoutLog {

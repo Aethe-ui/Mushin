@@ -6,6 +6,7 @@ import { SessionLauncher } from "@/components/dashboard/SessionLauncher";
 import { WorkspaceCard } from "@/components/dashboard/WorkspaceCard";
 import { RecentSessions } from "@/components/dashboard/RecentSessions";
 import { PerformanceWidget } from "@/components/dashboard/PerformanceWidget";
+import { BurnoutRiskAlert } from "@/components/dashboard/BurnoutRiskAlert";
 import { Button } from "@/components/ui/Button";
 import type { CollaboratorUser, SessionRow } from "@/types/mushin";
 
@@ -97,6 +98,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-10">
+      <BurnoutRiskAlert />
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="font-mono text-2xl text-text-primary">{greeting}</h1>

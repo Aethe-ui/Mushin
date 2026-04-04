@@ -11,6 +11,10 @@ import {
   computeLevel,
   generateExplanation,
 } from "@/lib/performance";
+import {
+  computeBurnoutForDate,
+  persistBurnoutRisk,
+} from "@/lib/burnout-sync";
 import type { DailyInput } from "@/types/performance";
 
 export async function POST(request: Request) {
@@ -149,7 +153,15 @@ export async function POST(request: Request) {
     [...recentDays, todayInput],
     todayInput.rest_hours
   );
-  const xpEarned = computeXP(perfScore, burnoutState);
+
+  const { result: burnResult, previousLevel: prevRiskLevel } =
+    await computeBurnoutForDate(supabase, user.id, targetDate, {
+      input: todayInput,
+      performanceScore: perfScore,
+      focusScore: focusScore,
+    });
+
+  const xpEarned = computeXP(perfScore, burnoutState, burnResult.xpPenaltyMult);
   const explanation = generateExplanation({
     input: todayInput,
     focusScore,
@@ -203,6 +215,18 @@ export async function POST(request: Request) {
     },
     { onConflict: "user_id" }
   );
+
+  try {
+    await persistBurnoutRisk(
+      supabase,
+      user.id,
+      targetDate,
+      burnResult,
+      prevRiskLevel
+    );
+  } catch {
+    /* burnout_risk_scores table may be missing until migration is applied */
+  }
 
   const { xpToNext } = computeLevel(newTotal);
   return NextResponse.json({

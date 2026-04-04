@@ -11,6 +11,7 @@ const links = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/analytics", label: "Analytics" },
   { href: "/performance", label: "Performance" },
+  { href: "/burnout", label: "Burnout Risk" },
 ];
 
 export function MainNav() {
