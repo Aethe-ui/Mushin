@@ -34,31 +34,42 @@ export default function WorkspacePage({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     const supabase = createClient();
-    void supabase.auth.getUser().then(({ data }) => {
-      setUserId(data.user?.id ?? null);
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!userId) return;
     let cancelled = false;
-    (async () => {
-      const res = await fetch(`/api/workspaces/${workspaceId}`);
+
+    void supabase.auth.getUser().then(({ data }) => {
+      const uid = data.user?.id ?? null;
       if (cancelled) return;
-      if (!res.ok) {
-        setLoadError("Could not load workspace");
+      setUserId(uid);
+
+      if (!uid) {
+        setLoadError("Not authenticated");
         return;
       }
-      const data = await res.json();
-      if (cancelled) return;
-      setWorkspaceMeta(data.workspace.id, data.workspace.title);
-      setCollaborators(data.collaborators ?? []);
-      setIsOwner(data.workspace.owner_id === userId);
-    })();
+
+      setLoadError(null);
+
+      void fetch(`/api/workspaces/${workspaceId}`)
+        .then(async (res) => {
+          if (cancelled) return;
+          if (!res.ok) {
+            setLoadError("Could not load workspace");
+            return;
+          }
+          const payload = await res.json();
+          if (cancelled) return;
+          setWorkspaceMeta(payload.workspace.id, payload.workspace.title);
+          setCollaborators(payload.collaborators ?? []);
+          setIsOwner(payload.workspace.owner_id === uid);
+        })
+        .catch(() => {
+          if (!cancelled) setLoadError("Network error loading workspace");
+        });
+    });
+
     return () => {
       cancelled = true;
     };
-  }, [workspaceId, userId, setWorkspaceMeta]);
+  }, [workspaceId, setWorkspaceMeta]);
 
   async function onTitleSave(t: string) {
     await fetch(`/api/workspaces/${workspaceId}`, {

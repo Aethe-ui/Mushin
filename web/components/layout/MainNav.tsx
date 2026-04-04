@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
@@ -14,6 +15,14 @@ const links = [
 
 export function MainNav() {
   const pathname = usePathname();
+  const [dbOk, setDbOk] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    void fetch("/api/health")
+      .then((r) => r.json())
+      .then((d: { db?: string }) => setDbOk(d.db === "connected"))
+      .catch(() => setDbOk(false));
+  }, []);
 
   async function signOut() {
     const supabase = createClient();
@@ -42,9 +51,18 @@ export function MainNav() {
           ))}
         </div>
       </div>
-      <Button variant="ghost" className="text-xs" onClick={() => void signOut()}>
-        Sign out
-      </Button>
+      <div className="flex items-center gap-3">
+        {dbOk !== null && (
+          <span
+            className={`font-mono text-xs ${dbOk ? "text-success" : "text-danger"}`}
+          >
+            {dbOk ? "● DB" : "✕ DB"}
+          </span>
+        )}
+        <Button variant="ghost" className="text-xs" onClick={() => void signOut()}>
+          Sign out
+        </Button>
+      </div>
     </nav>
   );
 }

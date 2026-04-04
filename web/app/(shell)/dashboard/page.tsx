@@ -23,6 +23,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [wsError, setWsError] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -43,7 +44,15 @@ export default function DashboardPage() {
         if (cancelled) return;
         if (wsRes.ok) {
           const j = await wsRes.json();
+          setWsError(null);
           setWorkspaces(j.workspaces ?? []);
+        } else {
+          const err = await wsRes.json().catch(() => ({}));
+          setWsError(
+            typeof (err as { error?: string }).error === "string"
+              ? (err as { error: string }).error
+              : `Workspace fetch failed: ${wsRes.status}`
+          );
         }
         if (histRes.ok) {
           const j = await histRes.json();
@@ -112,8 +121,18 @@ export default function DashboardPage() {
               disabled={createLoading}
               onClick={() => void newWorkspace()}
             >
-              {createLoading ? "Creating…" : "New workspace"}
+              {createLoading ? (
+                <span className="flex items-center gap-1">
+                  <span className="h-3 w-3 animate-spin rounded-full border border-text-tertiary border-t-accent" />
+                  Creating…
+                </span>
+              ) : (
+                "+ New workspace"
+              )}
             </Button>
+            {wsError && (
+              <p className="mt-1 text-xs text-danger">⚠ {wsError}</p>
+            )}
             {createError && (
               <p className="mt-2 text-sm text-danger">{createError}</p>
             )}

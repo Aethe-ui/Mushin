@@ -14,6 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { BurnoutAnalyticsDashboard } from "@/components/burnout/BurnoutAnalyticsDashboard";
 import { levelProgressPercent } from "@/lib/performance";
 import type { BurnoutState, PerformanceSnapshot } from "@/types/performance";
 
@@ -470,6 +471,13 @@ export default function PerformancePage() {
           ))}
         </ul>
       </div>
+
+      <section>
+        <h2 className="mb-3 font-mono text-sm uppercase tracking-widest text-text-tertiary">
+          Burnout Analytics — Last 5 Days
+        </h2>
+        <BurnoutAnalyticsDashboard />
+      </section>
     </div>
   );
 }
