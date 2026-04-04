@@ -67,9 +67,28 @@ export default function NeuralBackground({
     };
 
     const particles: Particle[] = [];
-    const count = 110;
-    const trailLen = 10;
+    let particleCount = 180;
+    const trailLen = 12;
     const scale = 0.0022;
+
+    let mouseX = 0;
+    let mouseY = 0;
+    let hasMouse = false;
+
+    const REPEL_RADIUS = 120;
+    const REPEL_RADIUS_SQ = REPEL_RADIUS * REPEL_RADIUS;
+    const REPEL_STRENGTH = 2.8;
+
+    function onWindowMouseMove(e: MouseEvent) {
+      const rect = root.getBoundingClientRect();
+      mouseX = e.clientX - rect.left;
+      mouseY = e.clientY - rect.top;
+      hasMouse = true;
+    }
+
+    function clearMouse() {
+      hasMouse = false;
+    }
 
     function flowAngle(x: number, y: number, time: number): number {
       return (
@@ -81,8 +100,12 @@ export default function NeuralBackground({
     }
 
     function initParticles(w: number, h: number) {
+      particleCount = Math.min(
+        420,
+        Math.max(180, Math.floor((w * h) / 8000))
+      );
       particles.length = 0;
-      for (let i = 0; i < count; i++) {
+      for (let i = 0; i < particleCount; i++) {
         particles.push({
           x: Math.random() * w,
           y: Math.random() * h,
@@ -114,6 +137,10 @@ export default function NeuralBackground({
     ro.observe(root);
     resize();
 
+    window.addEventListener("mousemove", onWindowMouseMove);
+    document.documentElement.addEventListener("mouseleave", clearMouse);
+    window.addEventListener("blur", clearMouse);
+
     function step() {
       const w = root.clientWidth;
       const h = root.clientHeight;
@@ -123,12 +150,12 @@ export default function NeuralBackground({
       }
 
       time += 0.007 * speed;
-      const fade = 0.14 + (1 - trailOpacity) * 0.08;
+      const fade = 0.12 + (1 - trailOpacity) * 0.07;
       const [br, bg, bb] = bgRgb;
-      c2d.fillStyle = `rgba(${br},${bg},${bb},${Math.min(0.28, fade)})`;
+      c2d.fillStyle = `rgba(${br},${bg},${bb},${Math.min(0.24, fade)})`;
       c2d.fillRect(0, 0, w, h);
 
-      const lineAlpha = Math.min(0.45, trailOpacity * 2.2);
+      const lineAlpha = Math.min(0.38, trailOpacity * 2.0);
       c2d.strokeStyle = `rgba(${r},${g},${b},${lineAlpha})`;
       c2d.lineWidth = 0.65;
       c2d.lineCap = "round";
@@ -138,6 +165,19 @@ export default function NeuralBackground({
         const stepSize = 1.4 * speed;
         p.x += Math.cos(ang) * stepSize;
         p.y += Math.sin(ang) * stepSize;
+
+        if (hasMouse) {
+          const dx = p.x - mouseX;
+          const dy = p.y - mouseY;
+          const distSq = dx * dx + dy * dy;
+          if (distSq < REPEL_RADIUS_SQ && distSq > 1e-6) {
+            const dist = Math.sqrt(distSq);
+            const t = 1 - dist / REPEL_RADIUS;
+            const strength = REPEL_STRENGTH * t * t;
+            p.x += (dx / dist) * strength;
+            p.y += (dy / dist) * strength;
+          }
+        }
 
         p.trail.push([p.x, p.y]);
         if (p.trail.length > trailLen) p.trail.shift();
@@ -166,6 +206,9 @@ export default function NeuralBackground({
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
+      window.removeEventListener("mousemove", onWindowMouseMove);
+      document.documentElement.removeEventListener("mouseleave", clearMouse);
+      window.removeEventListener("blur", clearMouse);
     };
   }, [color, trailOpacity, speed]);
 
