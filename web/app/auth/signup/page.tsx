@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { getPublicAppOrigin } from "@/lib/app-url";
 import { Button } from "@/components/ui/Button";
 
 export default function SignupPage() {
@@ -37,7 +38,7 @@ export default function SignupPage() {
 
   async function google() {
     const supabase = createClient();
-    const origin = window.location.origin;
+    const origin = getPublicAppOrigin();
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${origin}/auth/callback` },
