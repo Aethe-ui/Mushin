@@ -52,6 +52,40 @@ alter table workspaces enable row level security;
 alter table collaborators enable row level security;
 alter table presence enable row level security;
 
+-- RLS-safe membership checks: direct policy subqueries on workspaces <-> collaborators
+-- recurse (each table's RLS re-checks the other). SECURITY DEFINER reads bypass RLS.
+create or replace function public.is_workspace_owner(p_workspace_id uuid, p_user_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from workspaces w
+    where w.id = p_workspace_id and w.owner_id = p_user_id
+  );
+$$;
+
+create or replace function public.is_workspace_collaborator(p_workspace_id uuid, p_user_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from collaborators c
+    where c.workspace_id = p_workspace_id and c.user_id = p_user_id
+  );
+$$;
+
+revoke all on function public.is_workspace_owner(uuid, uuid) from public;
+grant execute on function public.is_workspace_owner(uuid, uuid) to authenticated, service_role;
+
+revoke all on function public.is_workspace_collaborator(uuid, uuid) from public;
+grant execute on function public.is_workspace_collaborator(uuid, uuid) to authenticated, service_role;
+
 drop policy if exists "Users manage own sessions" on sessions;
 create policy "Users manage own sessions" on sessions
   for all using (auth.uid() = user_id);
@@ -62,30 +96,15 @@ create policy "Owner full access to workspaces" on workspaces
 
 drop policy if exists "Collaborators can read workspaces" on workspaces;
 create policy "Collaborators can read workspaces" on workspaces
-  for select using (
-    exists (
-      select 1 from collaborators
-      where workspace_id = workspaces.id and user_id = auth.uid()
-    )
-  );
+  for select using (is_workspace_collaborator(id, auth.uid()));
 
 drop policy if exists "Collaborators can update workspace content" on workspaces;
 create policy "Collaborators can update workspace content" on workspaces
-  for update using (
-    exists (
-      select 1 from collaborators
-      where workspace_id = workspaces.id and user_id = auth.uid()
-    )
-  );
+  for update using (is_workspace_collaborator(id, auth.uid()));
 
 drop policy if exists "Owner manages collaborators" on collaborators;
 create policy "Owner manages collaborators" on collaborators
-  for all using (
-    exists (
-      select 1 from workspaces
-      where id = workspace_id and owner_id = auth.uid()
-    )
-  );
+  for all using (is_workspace_owner(workspace_id, auth.uid()));
 
 drop policy if exists "Collaborators read own membership" on collaborators;
 create policy "Collaborators read own membership" on collaborators
@@ -94,13 +113,9 @@ create policy "Collaborators read own membership" on collaborators
 drop policy if exists "Workspace members manage presence" on presence;
 create policy "Workspace members manage presence" on presence
   for all using (
-    auth.uid() = user_id or
-    exists (
-      select 1 from workspaces where id = workspace_id and owner_id = auth.uid()
-    ) or
-    exists (
-      select 1 from collaborators where workspace_id = presence.workspace_id and user_id = auth.uid()
-    )
+    auth.uid() = user_id
+    or is_workspace_owner(workspace_id, auth.uid())
+    or is_workspace_collaborator(workspace_id, auth.uid())
   );
 
 -- Realtime: enable for workspaces and presence in Dashboard → Database → Replication
