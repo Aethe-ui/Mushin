@@ -189,3 +189,67 @@ create index if not exists rest_logs_user_date
 create index if not exists perf_snapshots_user_date
   on performance_snapshots(user_id, snapshot_date);
 */
+CREATE TABLE IF NOT EXISTS public.burnout_risk_scores (
+  id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id           uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  score_date        date NOT NULL,
+
+  -- The headline number (0–100)
+  risk_score        numeric(5,2) NOT NULL DEFAULT 0
+                    CHECK (risk_score >= 0 AND risk_score <= 100),
+
+  -- Sub-component scores (0–100 each)
+  workload_score    numeric(5,2) NOT NULL DEFAULT 0,
+  recovery_score    numeric(5,2) NOT NULL DEFAULT 0,
+  consistency_score numeric(5,2) NOT NULL DEFAULT 0,
+
+  -- Risk level derived from risk_score thresholds
+  risk_level        text NOT NULL DEFAULT 'LOW'
+                    CHECK (risk_level IN ('LOW', 'MODERATE', 'HIGH', 'CRITICAL')),
+
+  -- Human-readable explanation
+  explanation       text,
+
+  -- Behavioral suggestions (JSON array of strings)
+  suggestions       jsonb DEFAULT '[]'::jsonb,
+
+  -- XP penalty multiplier applied for this day (0.0 – 1.0)
+  xp_penalty_mult   numeric(4,3) NOT NULL DEFAULT 1.0
+                    CHECK (xp_penalty_mult >= 0 AND xp_penalty_mult <= 1),
+
+  created_at        timestamptz NOT NULL DEFAULT now(),
+  updated_at        timestamptz NOT NULL DEFAULT now(),
+
+  UNIQUE (user_id, score_date)
+);
+
+ALTER TABLE public.burnout_risk_scores ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users manage own burnout_risk_scores"
+  ON public.burnout_risk_scores FOR ALL
+  USING (auth.uid() = user_id);
+
+CREATE INDEX IF NOT EXISTS brs_user_date_idx
+  ON public.burnout_risk_scores (user_id, score_date DESC);
+
+-- ─────────────────────────────────────────────────────────────
+-- Burnout Risk Events  (audit log of escalations / de-escalations)
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.burnout_risk_events (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  event_date    date NOT NULL DEFAULT CURRENT_DATE,
+  from_level    text NOT NULL,
+  to_level      text NOT NULL,
+  trigger_facts jsonb DEFAULT '[]'::jsonb,  -- array of strings explaining WHY
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.burnout_risk_events ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users manage own burnout_risk_events"
+  ON public.burnout_risk_events FOR ALL
+  USING (auth.uid() = user_id);
+
+CREATE INDEX IF NOT EXISTS bre_user_date_idx
+  ON public.burnout_risk_events (user_id, event_date DESC);
