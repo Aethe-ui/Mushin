@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getPublicAppOrigin } from "@/lib/app-url";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
+import NeuralBackground from "@/components/ui/flow-field-background";
 
 type LoginMode = "employee" | "employer";
 
@@ -141,45 +142,53 @@ export function LoginForm() {
   const [mode, setMode] = useState<LoginMode>("employee");
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-10">
-      <div className="flex w-full max-w-sm flex-col items-center">
-        <header className="mb-6 text-center">
-          <h1 className="font-mono text-2xl text-text-primary">Mushin</h1>
-          <p className="mt-2 text-sm text-text-secondary">Sign in to focus.</p>
-        </header>
+    <div className="relative min-h-screen w-full">
+      <NeuralBackground
+        color="#818cf8"
+        trailOpacity={0.1}
+        speed={0.8}
+        className="absolute inset-0"
+      />
+      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-10">
+        <div className="flex w-full max-w-sm flex-col items-center">
+          <header className="mb-6 text-center">
+            <h1 className="font-mono text-2xl text-text-primary">Mushin</h1>
+            <p className="mt-2 text-sm text-text-secondary">Sign in to focus.</p>
+          </header>
 
-        <LoginSection key={mode} mode={mode} />
+          <LoginSection key={mode} mode={mode} />
 
-        <div
-          className="mt-6 w-full"
-          role="group"
-          aria-label="Sign-in as employee or employer"
-        >
-          <div className="flex rounded-lg border border-border bg-bg-primary p-0.5">
-            <button
-              type="button"
-              onClick={() => setMode("employee")}
-              className={cn(
-                "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                mode === "employee"
-                  ? "bg-bg-surface text-text-primary shadow-sm"
-                  : "text-text-secondary hover:text-text-primary"
-              )}
-            >
-              Employee
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("employer")}
-              className={cn(
-                "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                mode === "employer"
-                  ? "bg-bg-surface text-text-primary shadow-sm"
-                  : "text-text-secondary hover:text-text-primary"
-              )}
-            >
-              Employer
-            </button>
+          <div
+            className="mt-6 w-full"
+            role="group"
+            aria-label="Sign-in as employee or employer"
+          >
+            <div className="flex rounded-lg border border-border bg-bg-primary p-0.5">
+              <button
+                type="button"
+                onClick={() => setMode("employee")}
+                className={cn(
+                  "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  mode === "employee"
+                    ? "bg-bg-surface text-text-primary shadow-sm"
+                    : "text-text-secondary hover:text-text-primary"
+                )}
+              >
+                Employee
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("employer")}
+                className={cn(
+                  "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  mode === "employer"
+                    ? "bg-bg-surface text-text-primary shadow-sm"
+                    : "text-text-secondary hover:text-text-primary"
+                )}
+              >
+                Employer
+              </button>
+            </div>
           </div>
         </div>
       </div>
